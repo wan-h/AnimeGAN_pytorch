@@ -1,0 +1,7 @@
+*.pyc
+*.local
+.idea
+.cache
+graph
+outputs
+local_src
