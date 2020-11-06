@@ -36,7 +36,10 @@ RUN conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cl
 
 # conda安装依赖库
 # https://docs.conda.io/projects/conda/en/latest/commands/clean.html
+RUN conda install -y python=3.7  && conda clean -a
 RUN conda install -y cudatoolkit=10.2  && conda clean -a
+RUN conda install -y pytorch  && conda clean -a
+RUN conda install -y torchvision  && conda clean -a
 
 # pip安装依赖库
 # add pip aliyun source
