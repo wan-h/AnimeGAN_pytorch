@@ -85,6 +85,10 @@ def vgg19(pretrained=False, progress=True, **kwargs):
     return _vgg('vgg19', 'E', False, pretrained, progress, **kwargs)
 
 @registry.BACKBONES.register("VGG19")
-def build_vgg19_backbone(cfg):
-    vgg = vgg19(pretrained=True)
-    return vgg
+def build_vgg_backbones(cfg):
+    return vgg19(pretrained=True)
+
+def build_generator(cfg):
+    assert cfg.MODEL.BACKBONES.BODY in registry.BACKBONES, \
+        f"cfg.MODEL.BACKBONES.BODY: {cfg.MODEL.BACKBONES.CONV_BODY} are not registered in registry"
+    return registry.BACKBONES[cfg.MODEL.BACKBONES.BODY](cfg)
