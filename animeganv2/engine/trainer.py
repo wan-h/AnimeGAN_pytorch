@@ -39,35 +39,41 @@ def reduce_loss_dict(loss_dict):
 
 
 def do_train(
-    model,
+    models,
+    cfg,
     data_loader,
-    optimizer,
-    scheduler,
+    optimizers,
+    schedulers,
     checkpointer,
-    device,
-    checkpoint_period,
-    print_period,
-    test_period,
     arguments,
     logger_name,
     epoch_size,
-    writer=None,
     evaluators=None,
 ):
-    logger = logging.getLogger(logger_name + ".trainer")
-    logger.info("Start training")
-    meters = MetricLogger(delimiter="  ")
-    max_iter = len(data_loader)
-    device = torch.device(device)
+    checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
+    print_period = cfg.SOLVER.PRINT_PERIOD
+    test_period = cfg.SOLVER.TEST_PERIOD
+    device = torch.device(cfg.MODEL.DEVICE)
 
-    if writer is None and is_main_process():
+    if is_main_process():
         save_dir = checkpointer.save_dir
         out_dir = os.path.dirname(save_dir)
         tensorboard_dir = os.path.join(out_dir, 'tensorboard')
         writer = SummaryWriter(tensorboard_dir)
 
     start_iter = arguments["iteration"]
-    model.train()
+    model_backbone = models['backbone']
+    model_generator = models['generator']
+    model_discriminator = models['discriminator']
+
+    model_backbone.eval()
+    model_generator.train()
+    model_discriminator.train()
+
+    logger = logging.getLogger(logger_name + ".trainer")
+    logger.info("Start training")
+    meters = MetricLogger(delimiter="  ")
+    max_iter = len(data_loader)
 
     training_timer = Timer()
     training_timer.tic()
@@ -81,12 +87,8 @@ def do_train(
     save_epoch = 0
     test_epoch = 0
 
-    for iteration, (images, targets, _) in enumerate(data_loader, start_iter):
+    for iteration, (real_images, style_images, smooth_images, _) in enumerate(data_loader, start_iter):
         data_load_time = data_load_timer.toc()
-
-        # if any(len(target) < 1 for target in targets):
-        #     logger.error(f"Iteration={iteration + 1} || Image Ids used for training {_} || targets Length={[len(target) for target in targets]}" )
-        #     continue
 
         arguments["iteration"] = iteration
         # 当前epoch度量

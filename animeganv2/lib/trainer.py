@@ -83,54 +83,47 @@ def train(cfg, local_rank, distributed, logger_name, output_dir):
         start_iter=arguments["iteration"]
     )
 
-    evaluators = get_evaluator(cfg, distributed, logger_name, dataEntrance, output_dir)
-
-    checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
-    print_period = cfg.SOLVER.PRINT_PERIOD
-    test_period = cfg.SOLVER.TEST_PERIOD
+    # evaluators = get_evaluator(cfg, distributed, logger_name, dataEntrance, output_dir)
+    models.update({"backbone": model_backbone})
 
     do_train(
-        model=model,
+        models=models,
+        cfg=cfg,
         data_loader=data_loader,
-        optimizer=optimizer,
-        scheduler=scheduler,
+        optimizers=optimizers,
+        schedulers=schedulers,
         checkpointer=checkpointer,
-        device=device,
-        checkpoint_period=checkpoint_period,
-        print_period=print_period,
-        test_period=test_period,
         arguments=arguments,
         logger_name=logger_name,
         epoch_size=epoch_size,
-        evaluators=evaluators,
+        evaluators=None,
     )
-    return model
 
-def get_evaluator(cfg, distributed, logger_name, dataEntrance=None, output_dir=None):
-    torch.cuda.empty_cache()
-
-    output_folders = list()
-    datasetsInfo = cfg.DATASETS.TEST
-
-    if output_dir:
-        for datasetInfo in datasetsInfo:
-            _output_folder = os.path.join(output_dir,
-                                          "inference",
-                                          datasetInfo.get('factory')+'_'+datasetInfo.get('split'))
-            if get_rank() == 0:
-                os.makedirs(_output_folder, exist_ok=True)
-            output_folders.append(_output_folder)
-    datasets_test, epoch_sizes = make_datasets(cfg, is_train=False, dataEntrance=dataEntrance)
-    data_loaders_test = make_data_loader(cfg, datasets=datasets_test, epoch_sizes=epoch_sizes, is_train=False, is_distributed=distributed)
-    evaluators = list()
-    for output_folder, data_loader_test in zip(output_folders, data_loaders_test):
-        evaluators.append(
-            Evaluator(
-                data_loader=data_loader_test,
-                logger_name=logger_name,
-                device=cfg.MODEL.DEVICE,
-                output_folder=output_folder,
-                evaluate_type=cfg.TEST.TYPE
-            )
-        )
-    return evaluators
+# def get_evaluator(cfg, distributed, logger_name, dataEntrance=None, output_dir=None):
+#     torch.cuda.empty_cache()
+#
+#     output_folders = list()
+#     datasetsInfo = cfg.DATASETS.TEST
+#
+#     if output_dir:
+#         for datasetInfo in datasetsInfo:
+#             _output_folder = os.path.join(output_dir,
+#                                           "inference",
+#                                           datasetInfo.get('factory')+'_'+datasetInfo.get('split'))
+#             if get_rank() == 0:
+#                 os.makedirs(_output_folder, exist_ok=True)
+#             output_folders.append(_output_folder)
+#     datasets_test, epoch_sizes = make_datasets(cfg, is_train=False, dataEntrance=dataEntrance)
+#     data_loaders_test = make_data_loader(cfg, datasets=datasets_test, epoch_sizes=epoch_sizes, is_train=False, is_distributed=distributed)
+#     evaluators = list()
+#     for output_folder, data_loader_test in zip(output_folders, data_loaders_test):
+#         evaluators.append(
+#             Evaluator(
+#                 data_loader=data_loader_test,
+#                 logger_name=logger_name,
+#                 device=cfg.MODEL.DEVICE,
+#                 output_folder=output_folder,
+#                 evaluate_type=cfg.TEST.TYPE
+#             )
+#         )
+#     return evaluators
