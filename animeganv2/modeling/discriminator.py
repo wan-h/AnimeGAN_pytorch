@@ -48,7 +48,7 @@ def build_base_discriminator(cfg):
     n_dis = cfg.MODEL.DISCRIMINATOR.N_DIS
     return D_Net(in_channels, n_dis)
 
-def build_generator(cfg):
+def build_discriminator(cfg):
     assert cfg.MODEL.DISCRIMINATOR.BODY in registry.DISCRIMINATOR, \
         f"cfg.MODEL.DISCRIMINATOR.BODY: {cfg.MODEL.DISCRIMINATOR.CONV_BODY} are not registered in registry"
     return registry.DISCRIMINATOR[cfg.MODEL.DISCRIMINATOR.BODY](cfg)

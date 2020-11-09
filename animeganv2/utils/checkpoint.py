@@ -5,22 +5,22 @@ import os
 import torch
 import logging
 from animeganv2.utils.comm import get_rank
-from animeganv2.utils.model_zoo import cache_url
 from animeganv2.utils.model_serialization import load_state_dict
 
-
-class Checkpointer(object):
+class ModelCheckpointer():
     def __init__(
             self,
-            model,
-            optimizer=None,
-            scheduler=None,
+            models,
+            optimizers=None,
+            schedulers=None,
             save_dir=None,
-            logger_name="",
+            logger_name=None,
     ):
-        self.model = model
-        self.optimizer = optimizer
-        self.scheduler = scheduler
+        if get_rank() != 0:
+            save_dir = None
+        self.models = models
+        self.optimizers = optimizers
+        self.schedulers = schedulers
         self.save_dir = save_dir
         if save_dir is not None:
             self.save_dir = os.path.join(save_dir, "model_record")
@@ -35,12 +35,16 @@ class Checkpointer(object):
             return
         os.makedirs(self.save_dir, exist_ok=True)
 
-        data = {}
-        data["model"] = self.model.state_dict()
-        if self.optimizer is not None:
-            data["optimizer"] = self.optimizer.state_dict()
-        if self.scheduler is not None:
-            data["scheduler"] = self.scheduler.state_dict()
+        data = {"models": {}, "optimizers": {}, "schedulers": {}}
+        data["models"]["generator"] = self.models['generator'].state_dict()
+        data["models"]["discriminator"] = self.models['discriminator'].state_dict()
+        if self.optimizers is not None:
+            data["optimizers"]["generator"] = self.optimizers['generator'].state_dict()
+            data["optimizers"]["discriminator"] = self.optimizers['discriminator'].state_dict()
+        if self.schedulers is not None:
+            data["schedulers"]["generator"] = self.schedulers['generator'].state_dict()
+            data["schedulers"]["discriminator"] = self.schedulers['discriminator'].state_dict()
+
         data.update(kwargs)
 
         save_file = os.path.join(self.save_dir, "{}.pth".format(name))
@@ -74,13 +78,16 @@ class Checkpointer(object):
             checkpoint["iteration"] = 0
             return checkpoint
 
-        if "optimizer" in checkpoint and self.optimizer:
+        if "optimizers" in checkpoint and self.optimizers:
             self.logger.info("Loading optimizer from {}".format(f))
-            self.optimizer.load_state_dict(checkpoint.pop("optimizer"))
-        if "scheduler" in checkpoint and self.scheduler:
+            checkpoint_optimizers = checkpoint.pop("optimizers")
+            self.optimizers["generator"].load_state_dict(checkpoint_optimizers.pop("generator"))
+            self.optimizers["discriminator"].load_state_dict(checkpoint_optimizers.pop("discriminator"))
+        if "schedulers" in checkpoint and self.schedulers:
             self.logger.info("Loading scheduler from {}".format(f))
-            self.scheduler.load_state_dict(checkpoint.pop("scheduler"))
-
+            checkpoint_schedulers = checkpoint.pop("schedulers")
+            self.schedulers["generator"].load_state_dict(checkpoint_schedulers.pop("generator"))
+            self.schedulers["discriminator"].load_state_dict(checkpoint_schedulers.pop("discriminator"))
         # return any further checkpoint data
         return checkpoint
 
@@ -113,38 +120,6 @@ class Checkpointer(object):
         return torch.load(f, map_location=torch.device("cpu"))
 
     def _load_model(self, checkpoint):
-        load_state_dict(self.model, checkpoint.pop("model"))
-
-
-class ModelCheckpointer(Checkpointer):
-    def __init__(
-            self,
-            model,
-            optimizer=None,
-            scheduler=None,
-            save_dir=None,
-            logger_name=None,
-    ):
-        if get_rank() != 0:
-            save_dir = None
-        super(ModelCheckpointer, self).__init__(
-            model=model,
-            optimizer=optimizer,
-            scheduler=scheduler,
-            save_dir=save_dir,
-            logger_name=logger_name
-        )
-
-    def _load_file(self, f):
-        # download url files
-        if f.startswith("http"):
-            # if the file is a url path, download it and cache it
-            cached_f = cache_url(f)
-            # print('cached_f:', cached_f)
-            self.logger.info("url {} cached in {}".format(f, cached_f))
-            f = cached_f
-        # load native detectron.pytorch checkpoint
-        loaded = super(ModelCheckpointer, self)._load_file(f)
-        if "model" not in loaded:
-            loaded = dict(model=loaded)
-        return loaded
+        checkpoint_models = checkpoint.pop("models")
+        load_state_dict(self.models["generator"], checkpoint_models.pop("generator"))
+        load_state_dict(self.models["discriminator"], checkpoint_models.pop("discriminator"))

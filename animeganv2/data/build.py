@@ -106,7 +106,7 @@ def make_datasetsInfo(datasetsDictInfo):
         datasetsInfo.append(DatasetInfo(**datasetDictInfo))
     return datasetsInfo
 
-def make_datasets(cfg, is_train=True, dataEntrance=None):
+def make_datasets(cfg, is_train=True):
     '''
     Arguments:
         cfg: 配置文件
