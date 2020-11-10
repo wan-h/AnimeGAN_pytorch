@@ -48,18 +48,29 @@ class VGG(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
 
+# 定制化，输出conv4_4_no_activation
 def make_layers(cfg, batch_norm=False):
     layers = []
     in_channels = 3
+    conv_stage = 1
+    inner_stage = 0
     for v in cfg:
         if v == 'M':
+            conv_stage += 1
+            inner_stage = 0
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
         else:
+            inner_stage += 1
             conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
-            if batch_norm:
-                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+            if conv_stage == 4 and inner_stage == 4:
+                layers += [conv2d]
+                # 特征返回点
+                break
             else:
-                layers += [conv2d, nn.ReLU(inplace=True)]
+                if batch_norm:
+                    layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+                else:
+                    layers += [conv2d, nn.ReLU(inplace=True)]
             in_channels = v
     return nn.Sequential(*layers)
 

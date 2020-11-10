@@ -11,6 +11,7 @@ from animeganv2.utils.tm import *
 from animeganv2.utils.comm import synchronize
 from animeganv2.utils.logger import MetricLogger
 from animeganv2.utils.comm import get_world_size, is_main_process
+from animeganv2.modeling.loss import *
 
 def reduce_loss_dict(loss_dict):
     """
@@ -65,6 +66,10 @@ def do_train(
     model_backbone = models['backbone']
     model_generator = models['generator']
     model_discriminator = models['discriminator']
+    optimizer_generator = optimizers['generator']
+    optimizer_discriminator = optimizers['discriminator']
+    scheduler_generator = schedulers['generator']
+    scheduler_discriminator = schedulers['discriminator']
 
     model_backbone.eval()
     model_generator.train()
@@ -94,35 +99,31 @@ def do_train(
         # 当前epoch度量
         epoch_current = math.ceil((iteration + 1) / epoch_size)
 
-        # FP
-        _t.tic()
-        images = images.to(device)
-        targets = [target.to(device) for target in targets]
-        loss_dict = model(images, targets)
-        losses = sum(loss for loss in loss_dict.values())
-        # reduce losses over all GPUs for logging purposes
-        loss_dict_reduced = reduce_loss_dict(loss_dict)
-        losses_reduced = sum(loss for loss in loss_dict_reduced.values())
-        FP_time = _t.toc()
-        if is_main_process():
-            # add_graph is not suggest to support
-            # if iteration == 0:
-                # writer.add_graph(model, images)
-            scalar_dict = loss_dict_reduced.copy()
-            scalar_dict.update({'loss_total': losses_reduced})
-            writer.add_scalars('train/loss', scalar_dict, iteration)
-        meters.update(loss_total=losses_reduced, **loss_dict_reduced)
-
-        # BP
-        _t.tic()
-        optimizer.zero_grad()
-        losses.backward()
-        optimizer.step()
-        if scheduler is not None:
-            scheduler.step()
-        BP_time = _t.toc()
-
-        batch_time = batch_timer.toc()
+        # init阶段
+        if epoch_current < cfg.SOLVER.GENERATOR.INIT_EPOCH:
+            # FP
+            _t.tic()
+            real_images = real_images.to(device)
+            loss_init = init_loss(model_backbone, model_generator, real_images)
+            FP_time = _t.toc()
+            loss_dict = {"Init_loss": loss_init}
+            if is_main_process():
+                writer.add_scalars('train/loss', loss_dict, iteration)
+            meters.update(**loss_dict)
+            # BP
+            optimizer_generator.zero_grad()
+            loss_init.backward()
+            optimizer_generator.step()
+            scheduler_generator.step()
+            scheduler_discriminator.step()
+            BP_time = _t.toc()
+            batch_time = batch_timer.toc()
+        # 正常训练阶段
+        else:
+            # update D
+            # FP
+            if iteration % cfg.MODEL.COMMON.TRAINING_RATE == 0:
+                pass
 
         # logger
         meters.update(batch_time=batch_time, data_time=data_load_time, FP_time=FP_time, BP_time=BP_time)
