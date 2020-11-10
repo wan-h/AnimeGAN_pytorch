@@ -95,6 +95,12 @@ def do_train(
     for iteration, (real_images, style_images, smooth_images, _) in enumerate(data_loader, start_iter):
         data_load_time = data_load_timer.toc()
 
+        real_images_color = real_images[0]
+        real_images_gray = real_images[1]
+        style_images_color = style_images[0]
+        style_images_gray = style_images[1]
+        smooth_images_color = smooth_images[0]
+        smooth_images_gray = smooth_images[1]
         arguments["iteration"] = iteration
         # 当前epoch度量
         epoch_current = math.ceil((iteration + 1) / epoch_size)
@@ -103,8 +109,8 @@ def do_train(
         if epoch_current < cfg.SOLVER.GENERATOR.INIT_EPOCH:
             # FP
             _t.tic()
-            real_images = real_images.to(device)
-            loss_init = init_loss(model_backbone, model_generator, real_images)
+            real_images_color = real_images_color.to(device)
+            loss_init = init_loss(model_backbone, model_generator, real_images_color)
             FP_time = _t.toc()
             loss_dict = {"Init_loss": loss_init}
             if is_main_process():
@@ -122,8 +128,27 @@ def do_train(
         else:
             # update D
             # FP
+            real_images_color = real_images_color.to(device)
+            style_images_color = style_images_color.to(device)
+            style_images_gray = style_images_gray.to(device)
+            smooth_images_gray = smooth_images_gray.to(device)
+            loss_dict = {}
             if iteration % cfg.MODEL.COMMON.TRAINING_RATE == 0:
-                pass
+                loss_d = d_loss(
+                    model_generator,
+                    model_discriminator,
+                    real_images_color,
+                    style_images_color,
+                    style_images_gray,
+                    smooth_images_gray
+                )
+                loss_dict.update({"D_loss": loss_d})
+                # BP
+                optimizer_discriminator.zero_grad()
+                loss_d.backward()
+                optimizer_discriminator.step()
+
+
 
         # logger
         meters.update(batch_time=batch_time, data_time=data_load_time, FP_time=FP_time, BP_time=BP_time)
