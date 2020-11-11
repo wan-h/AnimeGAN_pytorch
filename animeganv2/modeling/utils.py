@@ -3,9 +3,17 @@
 
 import torch
 from torch import nn as nn
-
+_rgb_to_yuv_kernel = [[0.299, -0.14714119, 0.61497538],
+                      [0.587, -0.28886916, -0.51496512],
+                      [0.114, 0.43601035, -0.10001026]]
 def rgb2yuv(x):
-    return x
+    # TODO: 这行代码的作用?
+    x = (x + 1.0) / 2.0
+    im_flat = x.contiguous().view(-1, 3).float()
+    mat = torch.Tensor(_rgb_to_yuv_kernel)
+    temp = im_flat.mm(mat)
+    out = temp.view(x.shape)
+    return out
 
 def gram(x):
     shape = x.shape

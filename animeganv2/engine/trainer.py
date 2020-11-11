@@ -127,13 +127,13 @@ def do_train(
         # 正常训练阶段
         else:
             # update D
-            # FP
             real_images_color = real_images_color.to(device)
             style_images_color = style_images_color.to(device)
             style_images_gray = style_images_gray.to(device)
             smooth_images_gray = smooth_images_gray.to(device)
             loss_dict = {}
             if iteration % cfg.MODEL.COMMON.TRAINING_RATE == 0:
+                # FP D
                 loss_d = d_loss(
                     model_generator,
                     model_discriminator,
@@ -143,12 +143,24 @@ def do_train(
                     smooth_images_gray
                 )
                 loss_dict.update({"D_loss": loss_d})
-                # BP
+                # BP D
                 optimizer_discriminator.zero_grad()
                 loss_d.backward()
                 optimizer_discriminator.step()
-
-
+            # FP G
+            loss_g = g_loss(
+                model_backbone,
+                model_generator,
+                model_discriminator,
+                real_images_color,
+                style_images_gray
+            )
+            # BP G
+            optimizer_generator.zero_grad()
+            loss_g.backward()
+            optimizer_generator.step()
+            scheduler_generator.step()
+            scheduler_discriminator.step()
 
         # logger
         meters.update(batch_time=batch_time, data_time=data_load_time, FP_time=FP_time, BP_time=BP_time)

@@ -13,7 +13,7 @@ def init_loss(model_backbone, model_generator, real_images_color):
     loss = F.l1_loss(real_feature_map, fake_feature_map, reduction='mean')
     return loss * cfg.MODEL.COMMON.WEIGHT_CON
 
-def g_loss(model_backbone, model_generator, real_images_color, style_images_gray):
+def g_loss(model_backbone, model_generator, model_discriminator, real_images_color, style_images_gray):
     real_feature_map = model_backbone(real_images_color)
     fake = model_generator(real_images_color)
     fake_feature_map = model_backbone(fake)
@@ -34,12 +34,25 @@ def g_loss(model_backbone, model_generator, real_images_color, style_images_gray
     tv_loss = F.mse_loss(dh_input, dh_target, reduction='mean') / dh_input.numel() + \
               F.mse_loss(dw_input, dw_target, reduction='mean') / dw_input.numel()
 
-    return cfg.MODEL.COMMON.WEIGHT_ADV_G * (
-            cfg.MODEL.COMMON.WEIGHT_G_CON * c_loss +
-            cfg.MODEL.COMMON.WEIGHT_G_STYLE * s_loss +
-            cfg.MODEL.COMMON.WEIGHT_G_STYLE * color_loss +
-            cfg.MODEL.COMMON.WEIGHT_G_TV * tv_loss
-    )
+    loss_func = cfg.MODEL.COMMON.GAN_TYPE
+    generated_logit = model_discriminator(fake)
+    if loss_func == 'wgan-gp' or loss_func == 'wgan-lp':
+        fake_loss = - torch.mean(generated_logit)
+    elif loss_func == 'lsgan':
+        fake_loss = torch.mean(torch.square(generated_logit - 1.0))
+    elif loss_func == 'gan' or loss_func == 'dragan':
+        fake_loss = F.cross_entropy(F.sigmoid(generated_logit), torch.ones_like(generated_logit), reduction='mean')
+    elif loss_func == 'hinge':
+        fake_loss = - torch.mean(generated_logit)
+    else:
+        raise NotImplementedError
+
+
+    return  cfg.MODEL.COMMON.WEIGHT_G_CON * c_loss + \
+            cfg.MODEL.COMMON.WEIGHT_G_STYLE * s_loss + \
+            cfg.MODEL.COMMON.WEIGHT_G_STYLE * color_loss + \
+            cfg.MODEL.COMMON.WEIGHT_G_TV * tv_loss + \
+            cfg.MODEL.COMMON.WEIGHT_ADV_G * fake_loss
 
 
 def d_loss(model_generator, model_discriminator, real_images_color, style_images_color, style_images_gray, smooth_images_gray):
