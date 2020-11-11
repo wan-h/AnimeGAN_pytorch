@@ -1,7 +1,18 @@
 # coding: utf-8
 # Author: wanhui0729@gmail.com
 
+import torch
 from torch import nn as nn
+
+def rgb2yuv(x):
+    return x
+
+def gram(x):
+    shape = x.shape
+    b = shape[0]
+    c = shape[1]
+    x = torch.reshape(x, [b, -1, c])
+    return torch.matmul(x.permute(0, 1, 2), x) / (x.numel() // b)
 
 class Conv2DNormLReLU(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=True):

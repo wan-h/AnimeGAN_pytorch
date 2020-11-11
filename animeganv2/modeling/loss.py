@@ -4,6 +4,7 @@
 import torch
 from animeganv2.configs import cfg
 from torch.nn import functional as F
+from .utils import gram, rgb2yuv
 
 def init_loss(model_backbone, model_generator, real_images_color):
     real_feature_map = model_backbone(real_images_color)
@@ -12,8 +13,34 @@ def init_loss(model_backbone, model_generator, real_images_color):
     loss = F.l1_loss(real_feature_map, fake_feature_map, reduction='mean')
     return loss * cfg.MODEL.COMMON.WEIGHT_CON
 
-def g_loss(model_generator, model_discriminator):
-    pass
+def g_loss(model_backbone, model_generator, real_images_color, style_images_gray):
+    real_feature_map = model_backbone(real_images_color)
+    fake = model_generator(real_images_color)
+    fake_feature_map = model_backbone(fake)
+    anime_feature_map = model_backbone(style_images_gray)
+
+    c_loss = F.l1_loss(real_feature_map, fake_feature_map, reduction='mean')
+
+    s_loss = F.l1_loss(gram(anime_feature_map), gram(fake_feature_map), reduction='mean')
+
+    real_images_color_yuv = rgb2yuv(real_images_color)
+    fake_yuv = rgb2yuv(fake)
+    color_loss = F.l1_loss(real_images_color_yuv[:, 0, :, :], fake_yuv[:, 0, :, :], reduction='mean') + \
+                 F.smooth_l1_loss(real_images_color_yuv[:, 1, :, :], fake_yuv[:, 1, :, :], reduction='mean') + \
+                 F.smooth_l1_loss(real_images_color_yuv[:, 2, :, :], fake_yuv[:, 2, :, :], reduction='mean')
+
+    dh_input, dh_target = fake[:, :, :-1, :], fake[:, :, 1:, :]
+    dw_input, dw_target = fake[:, :, :, :-1], fake[:, :, :, 1:]
+    tv_loss = F.mse_loss(dh_input, dh_target, reduction='mean') / dh_input.numel() + \
+              F.mse_loss(dw_input, dw_target, reduction='mean') / dw_input.numel()
+
+    return cfg.MODEL.COMMON.WEIGHT_ADV_G * (
+            cfg.MODEL.COMMON.WEIGHT_G_CON * c_loss +
+            cfg.MODEL.COMMON.WEIGHT_G_STYLE * s_loss +
+            cfg.MODEL.COMMON.WEIGHT_G_STYLE * color_loss +
+            cfg.MODEL.COMMON.WEIGHT_G_TV * tv_loss
+    )
+
 
 def d_loss(model_generator, model_discriminator, real_images_color, style_images_color, style_images_gray, smooth_images_gray):
     anime_logit = model_discriminator(style_images_color)
