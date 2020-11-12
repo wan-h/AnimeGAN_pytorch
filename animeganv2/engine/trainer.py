@@ -111,19 +111,17 @@ def do_train(
             _t.tic()
             real_images_color = real_images_color.to(device)
             loss_init = init_loss(model_backbone, model_generator, real_images_color)
-            FP_time = _t.toc()
+            INIT_FP_time = _t.toc()
             loss_dict = {"Init_loss": loss_init}
-            if is_main_process():
-                writer.add_scalars('train/loss', loss_dict, iteration)
-            meters.update(**loss_dict)
             # BP
+            _t.tic()
             optimizer_generator.zero_grad()
             loss_init.backward()
             optimizer_generator.step()
             scheduler_generator.step()
             scheduler_discriminator.step()
-            BP_time = _t.toc()
-            batch_time = batch_timer.toc()
+            INIT_BP_time = _t.toc()
+            meters.update(INIT_FP_time=INIT_FP_time, INIT_BP_time=INIT_BP_time)
         # 正常训练阶段
         else:
             # update D
@@ -134,6 +132,7 @@ def do_train(
             loss_dict = {}
             if iteration % cfg.MODEL.COMMON.TRAINING_RATE == 0:
                 # FP D
+                _t.tic()
                 loss_d = d_loss(
                     model_generator,
                     model_discriminator,
@@ -142,12 +141,17 @@ def do_train(
                     style_images_gray,
                     smooth_images_gray
                 )
+                D_FP_time = _t.toc()
                 loss_dict.update({"D_loss": loss_d})
                 # BP D
+                _t.tic()
                 optimizer_discriminator.zero_grad()
                 loss_d.backward()
                 optimizer_discriminator.step()
+                D_BP_time = _t.toc()
+                meters.update(D_FP_time=D_FP_time, D_BP_time=D_BP_time)
             # FP G
+            _t.tic()
             loss_g = g_loss(
                 model_backbone,
                 model_generator,
@@ -155,15 +159,23 @@ def do_train(
                 real_images_color,
                 style_images_gray
             )
+            G_FP_time = _t.toc()
             # BP G
+            _t.tic()
             optimizer_generator.zero_grad()
             loss_g.backward()
             optimizer_generator.step()
             scheduler_generator.step()
             scheduler_discriminator.step()
+            G_BP_time = _t.toc()
+            meters.update(G_FP_time=G_FP_time, G_BP_time=G_BP_time)
 
+        batch_time = batch_timer.toc()
+        # loss记录
+        if is_main_process():
+            writer.add_scalars('train/loss', loss_dict, iteration)
         # logger
-        meters.update(batch_time=batch_time, data_time=data_load_time, FP_time=FP_time, BP_time=BP_time)
+        meters.update(batch_time=batch_time, data_time=data_load_time, **loss_dict)
         eta_seconds = meters.batch_time.global_avg * (max_iter - iteration)
         eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
         if ((iteration - 1) % print_period == 0) or iteration == max_iter - 1:
@@ -177,7 +189,7 @@ def do_train(
                         # "iter: {iter}",
                         "epoch: {epoch}",
                         "{meters}",
-                        "lr: {lr:.6f}",
+                        "lr(G|D): {G_lr:.6f}|{D_lr:.6f}",
                         "max mem: {memory:.0f}",
                     ]
                 ).format(
@@ -185,7 +197,8 @@ def do_train(
                     # iter=iteration,
                     epoch=epoch_string,
                     meters=str(meters),
-                    lr=optimizer.param_groups[0]["lr"],
+                    G_lr=optimizer_generator.param_groups[0]["lr"],
+                    D_lr=optimizer_discriminator.param_groups[0]["lr"],
                     memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0 if torch.cuda.is_available() else 0,
                 )
             )
@@ -194,37 +207,30 @@ def do_train(
         if (epoch_current - 1) % checkpoint_period == 0 and epoch_current != save_epoch and epoch_current > 1:
             checkpointer.save("model_{:05d}".format(epoch_current - 1), **arguments)
             save_epoch = epoch_current
-        if iteration == max_iter - 1:
-            # checkpointer.save("model_final", **arguments)
-            checkpointer.save("model_{:05d}".format(epoch_current), **arguments)
 
         # test
         if iteration == (max_iter - 1) or \
                 ((epoch_current - 1) % test_period == 0 and epoch_current != test_epoch and epoch_current > 1):
-            model.eval()
             # 最后一个epoch训练完成后做正确显示
             epoch_current_show = epoch_current if iteration == (max_iter - 1) else (epoch_current - 1)
             if evaluators:
+                model_generator.eval()
                 for evaluator in evaluators:
-                    result = evaluator.do_inference(model)
+                    result = evaluator.do_inference(model_generator)
                     # 只有主线程返回
                     if result:
                         # 用于解析日志标志
                         logger.info("(*^_^*)")
                         logger.info("Test model at {} dataset at {} epoch".
                                     format(evaluator.data_loader.dataset.__class__.__name__, epoch_current_show))
-                        logger.info(result)
-                        if is_main_process():
-                            for k, v in result.items():
-                                writer.add_scalar("test/{}".format(k), v, epoch_current)
                     # synchronize after test
                     synchronize()
+                model_generator.train()
             test_epoch = epoch_current
-            model.train()
 
         batch_timer.tic()
         data_load_timer.tic()
-    # checkpointer.save("model_final", **arguments)
+    checkpointer.save("model_final", **arguments)
     total_training_time = training_timer.toc()
     total_time_str = str(datetime.timedelta(seconds=total_training_time))
     logger.info(
