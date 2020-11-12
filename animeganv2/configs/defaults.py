@@ -50,6 +50,26 @@ _C.MODEL.COMMON.WEIGHT_D_LOSS_FAKE = 1.7
 _C.MODEL.COMMON.WEIGHT_D_LOSS_GRAY = 1.7
 _C.MODEL.COMMON.WEIGHT_D_LOSS_BLUR = 1.0
 
+# -----------------------------------------------------------------------------
+# Dataset
+# -----------------------------------------------------------------------------
+_C.DATASETS = CN()
+# List of the dataset Info for training
+_C.DATASETS.TRAIN = [
+    {
+        'factory': 'PascalVOCDataset',
+        'dataDir': '/data/datasets/voc/VOC2007',
+        'split': 'train'
+    }
+]
+# List of the dataset Info for testing
+_C.DATASETS.TEST = [
+    {
+        'factory': 'PascalVOCDataset',
+        'dataDir': '/data/datasets/voc/VOC2007',
+        'split': 'test'
+    }
+]
 
 # ---------------------------------------------------------------------------- #
 # Solver

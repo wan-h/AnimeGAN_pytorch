@@ -1,9 +1,6 @@
 # coding: utf-8
 # Author: wanhui0729@gmail.com
 
-# coding: utf-8
-# Author: wanhui0729@gmail.com
-
 import os
 import random
 import torch.utils.data
@@ -30,7 +27,6 @@ class AnimeGanDataset(torch.utils.data.Dataset):
         else:
             real_path = os.path.join(dataFolder, 'real')
             self.real = os.listdir(real_path)
-            self._init_real_producer()
 
     def _gen_smooth(self, real_path, smooth_path):
         pass
@@ -64,12 +60,28 @@ class AnimeGanDataset(torch.utils.data.Dataset):
             style = Image.open(style).convert("RGB")
             smooth = Image.open(smooth).convert("RGB")
             if self.transforms:
-                real, style, smooth = self.transforms([real, style, smooth])
+                [real, style, smooth] = self.transforms([real, style, smooth])
             return real, style, smooth, index
         else:
-            real = self._real_consumer()
+            real = self.real[index]
+            real = Image.open(real).convert("RGB")
             if self.transforms:
-                real = self.transforms([real])
-            return real
+                real = self.transforms([real])[0]
+            return real, None, None, index
+
     def __len__(self):
-        return max(len(self.real), len(self.style))
+        if self.split == 'train':
+            return max(len(self.real), len(self.style))
+        else:
+            return len(self.real)
+
+    # def __iter__(self):
+    #     self.iternum = self.__len__()
+    #     return self
+    #
+    # def __next__(self):
+    #     self.iternum -= 1
+    #     if self.iternum < 0:
+    #         raise StopIteration
+    #     else:
+    #         return self.__getitem__(self.iternum)

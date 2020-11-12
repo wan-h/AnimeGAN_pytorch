@@ -11,6 +11,8 @@ class ImageBatchCollator(object):
         '''
         准备训练数据
         '''
+        if not images:
+            return None
         color_images = [image[0] for image in images]
         gray_images = [image[1] for image in images]
         return [torch.stack(color_images), torch.stack(gray_images)]
