@@ -4,6 +4,7 @@
 import os
 import torch
 import logging
+from animeganv2.engine.inference import Evaluator
 from animeganv2.engine.trainer import do_train
 from animeganv2.modeling.build import build_model
 from animeganv2.utils.comm import synchronize, get_rank
@@ -99,31 +100,30 @@ def train(cfg, local_rank, distributed, logger_name, output_dir):
         evaluators=None,
     )
 
-# def get_evaluator(cfg, distributed, logger_name, dataEntrance=None, output_dir=None):
-#     torch.cuda.empty_cache()
-#
-#     output_folders = list()
-#     datasetsInfo = cfg.DATASETS.TEST
-#
-#     if output_dir:
-#         for datasetInfo in datasetsInfo:
-#             _output_folder = os.path.join(output_dir,
-#                                           "inference",
-#                                           datasetInfo.get('factory')+'_'+datasetInfo.get('split'))
-#             if get_rank() == 0:
-#                 os.makedirs(_output_folder, exist_ok=True)
-#             output_folders.append(_output_folder)
-#     datasets_test, epoch_sizes = make_datasets(cfg, is_train=False, dataEntrance=dataEntrance)
-#     data_loaders_test = make_data_loader(cfg, datasets=datasets_test, epoch_sizes=epoch_sizes, is_train=False, is_distributed=distributed)
-#     evaluators = list()
-#     for output_folder, data_loader_test in zip(output_folders, data_loaders_test):
-#         evaluators.append(
-#             Evaluator(
-#                 data_loader=data_loader_test,
-#                 logger_name=logger_name,
-#                 device=cfg.MODEL.DEVICE,
-#                 output_folder=output_folder,
-#                 evaluate_type=cfg.TEST.TYPE
-#             )
-#         )
-#     return evaluators
+def get_evaluator(cfg, distributed, logger_name, dataEntrance=None, output_dir=None):
+    torch.cuda.empty_cache()
+
+    output_folders = list()
+    datasetsInfo = cfg.DATASETS.TEST
+
+    if output_dir:
+        for datasetInfo in datasetsInfo:
+            _output_folder = os.path.join(output_dir,
+                                          "inference",
+                                          datasetInfo.get('factory')+'_'+datasetInfo.get('split'))
+            if get_rank() == 0:
+                os.makedirs(_output_folder, exist_ok=True)
+            output_folders.append(_output_folder)
+    datasets_test, epoch_sizes = make_datasets(cfg, is_train=False, dataEntrance=dataEntrance)
+    data_loaders_test = make_data_loader(cfg, datasets=datasets_test, epoch_sizes=epoch_sizes, is_train=False, is_distributed=distributed)
+    evaluators = list()
+    for output_folder, data_loader_test in zip(output_folders, data_loaders_test):
+        evaluators.append(
+            Evaluator(
+                data_loader=data_loader_test,
+                logger_name=logger_name,
+                device=cfg.MODEL.DEVICE,
+                output_folder=output_folder,
+            )
+        )
+    return evaluators

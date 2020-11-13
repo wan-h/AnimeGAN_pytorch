@@ -1,8 +1,10 @@
 # coding: utf-8
 # Author: wanhui0729@gmail.com
 
+import cv2
 import torch
 from torch import nn as nn
+import numpy as np
 _rgb_to_yuv_kernel = [[0.299, -0.14714119, 0.61497538],
                       [0.587, -0.28886916, -0.51496512],
                       [0.114, 0.43601035, -0.10001026]]
@@ -21,6 +23,38 @@ def gram(x):
     c = shape[1]
     x = torch.reshape(x, [b, -1, c])
     return torch.matmul(x.permute(0, 1, 2), x) / (x.numel() // b)
+
+# Calculates the average brightness in the specified irregular image
+def calculate_average_brightness(img):
+    # Average value of three color channels
+    R = img[..., 0].mean()
+    G = img[..., 1].mean()
+    B = img[..., 2].mean()
+
+    brightness = 0.299 * R + 0.587 * G + 0.114 * B
+    return brightness, B, G, R
+
+# Adjusting the average brightness of the target image to the average brightness of the source image
+def adjust_brightness_from_src_to_dst(dst, src):
+    brightness1, B1, G1, R1 = calculate_average_brightness(src)
+    brightness2, B2, G2, R2 = calculate_average_brightness(dst)
+    brightness_difference = brightness1 / brightness2
+
+    # According to the average display brightness
+    dstf = dst * brightness_difference
+
+    # According to the average value of the three-color channel
+    # dstf = dst.copy().astype(np.float32)
+    # dstf[..., 0] = dst[..., 0] * (B1 / B2)
+    # dstf[..., 1] = dst[..., 1] * (G1 / G2)
+    # dstf[..., 2] = dst[..., 2] * (R1 / R2)
+
+    # To limit the results and prevent crossing the border,
+    # it must be converted to uint8, otherwise the default result is float32, and errors will occur.
+    dstf = np.clip(dstf, 0, 255)
+    dstf = np.uint8(dstf)
+
+    return dstf
 
 class Conv2DNormLReLU(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=True):
