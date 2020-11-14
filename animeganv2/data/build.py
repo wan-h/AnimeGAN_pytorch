@@ -62,38 +62,14 @@ def _quantize(x, bins):
     return quantized
 
 
-def _compute_aspect_ratios(dataset):
-    '''
-    Arguments:
-        dataset: 数据集
-    return:
-        数据集中数据宽高比例
-    '''
-    aspect_ratios = []
-    for i in range(len(dataset)):
-        img_info = dataset.get_img_info(i)
-        aspect_ratio = float(img_info["height"]) / float(img_info["width"])
-        aspect_ratios.append(aspect_ratio)
-    return aspect_ratios
-
-
 def make_batch_data_sampler(
-    dataset, sampler, aspect_grouping, images_per_batch, num_iters=None, start_iter=0, is_train=False
+    dataset, sampler, images_per_batch, num_iters=None, start_iter=0, is_train=False
 ):
     # 防止batchsize为1时导致模型batchnorm报错
     drop = True if is_train else False
-    if aspect_grouping:
-        if not isinstance(aspect_grouping, (list, tuple)):
-            aspect_grouping = [aspect_grouping]
-        aspect_ratios = _compute_aspect_ratios(dataset)
-        group_ids = _quantize(aspect_ratios, aspect_grouping)
-        batch_sampler = samplers.GroupedBatchSampler(
-            sampler, group_ids, images_per_batch, drop_uneven=drop
-        )
-    else:
-        batch_sampler = torch.utils.data.sampler.BatchSampler(
-            sampler, images_per_batch, drop_last=drop
-        )
+    batch_sampler = torch.utils.data.sampler.BatchSampler(
+        sampler, images_per_batch, drop_last=drop
+    )
     if num_iters is not None:
         batch_sampler = samplers.IterationBasedBatchSampler(
             batch_sampler, num_iters, start_iter
@@ -153,18 +129,13 @@ def make_data_loader(cfg, datasets, epoch_sizes, is_train=True, is_distributed=F
         start_iter = 0
         num_iters = None
 
-    # group images which have similar aspect ratio. In this case, we only
-    # group in two cases: those with width / height > 1, and the other way around,
-    # but the code supports more general grouping strategy
-    aspect_grouping = [1] if cfg.DATALOADER.ASPECT_RATIO_GROUPING else []
-
     data_loaders = []
     for dataset in datasets:
         sampler = make_data_sampler(dataset, shuffle, is_distributed)
         batch_sampler = make_batch_data_sampler(
-            dataset, sampler, aspect_grouping, images_per_gpu, num_iters, start_iter, is_train
+            dataset, sampler, images_per_gpu, num_iters, start_iter, is_train
         )
-        collator = ImageBatchCollator(cfg.DATALOADER.SIZE_DIVISIBILITY)
+        collator = ImageBatchCollator()
         num_workers = cfg.DATALOADER.NUM_WORKERS
         data_loader = torch.utils.data.DataLoader(
             dataset,

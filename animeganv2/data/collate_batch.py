@@ -3,10 +3,6 @@
 
 import torch
 class ImageBatchCollator(object):
-
-    def __init__(self, size_divisible=0):
-        self.size_divisible = size_divisible
-
     def _prepare(self, images):
         '''
         准备训练数据

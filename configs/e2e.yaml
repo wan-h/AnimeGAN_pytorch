@@ -27,14 +27,14 @@ DATASETS:
   TRAIN: [
     {
       'factory': 'AnimeGanDataset',
-      'dataDir': '/data/datasets/animegan',
+      'dataDir': '/data/datasets/animegan/Shinkai',
       'split': 'train'
     }
   ]
   TEST: [
     {
       'factory': 'AnimeGanDataset',
-      'dataDir': '/data/datasets/animegan',
+      'dataDir': '/data/datasets/animegan/Shinkai',
       'split': 'test'
     }
   ]

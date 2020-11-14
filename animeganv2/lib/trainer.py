@@ -10,7 +10,9 @@ from animeganv2.modeling.build import build_model
 from animeganv2.utils.comm import synchronize, get_rank
 from animeganv2.utils.checkpoint import ModelCheckpointer
 from animeganv2.data.build import make_datasets, make_data_loader
-from animeganv2.solver.build import make_lr_scheduler, make_optimizer
+from animeganv2.solver.build import make_optimizer_generator, make_optimizer_discriminator
+from animeganv2.solver.build import make_lr_scheduler_generator, make_lr_scheduler_discriminator
+
 
 def train(cfg, local_rank, distributed, logger_name, output_dir):
     model_backbone, model_generator, model_discriminator = build_model(cfg)
@@ -31,11 +33,11 @@ def train(cfg, local_rank, distributed, logger_name, output_dir):
     # train阶段dataset合并成一个
     epoch_size = epoch_sizes[0]
 
-    optimizer_generator = make_optimizer(cfg, model_generator)
-    optimizer_discriminator = make_optimizer(cfg, model_discriminator)
+    optimizer_generator = make_optimizer_generator(cfg, model_generator)
+    optimizer_discriminator = make_optimizer_discriminator(cfg, model_discriminator)
     # TODO: epoch_size优化
-    scheduler_generator = make_lr_scheduler(cfg, optimizer_generator, epoch_size)
-    scheduler_discriminator = make_lr_scheduler(cfg, optimizer_discriminator, epoch_size)
+    scheduler_generator = make_lr_scheduler_generator(cfg, optimizer_generator, epoch_size)
+    scheduler_discriminator = make_lr_scheduler_discriminator(cfg, optimizer_discriminator, epoch_size)
 
     if distributed:
         model_backbone = torch.nn.parallel.DistributedDataParallel(

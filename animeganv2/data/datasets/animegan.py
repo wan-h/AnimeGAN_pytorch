@@ -4,6 +4,7 @@
 import os
 import cv2
 import random
+import numpy as np
 import torch.utils.data
 
 class AnimeGanDataset(torch.utils.data.Dataset):
@@ -19,14 +20,14 @@ class AnimeGanDataset(torch.utils.data.Dataset):
             # 初始化做smooth处理
             if not os.path.exists(smooth_path):
                 self._gen_smooth(real_path, smooth_path)
-            self.real = os.listdir(real_path)
-            self.style = os.listdir(style_path)
+            self.real = [os.path.join(real_path, name) for name in os.listdir(real_path)]
+            self.style = [os.path.join(style_path, name) for name in os.listdir(style_path)]
             self.smooth_path = smooth_path
             self._init_real_producer()
             self._init_style_producer()
         else:
             real_path = os.path.join(dataFolder, 'real')
-            self.real = os.listdir(real_path)
+            self.real = [os.path.join(real_path, name) for name in os.listdir(real_path)]
 
     def _gen_smooth(self, real_path, smooth_path):
         pass
@@ -56,15 +57,15 @@ class AnimeGanDataset(torch.utils.data.Dataset):
             real, style = self._real_consumer(), self._style_consumer()
             # 同名
             smooth = os.path.join(self.smooth_path, os.path.basename(style))
-            real = cv2.imread(real)
-            style = cv2.imread(style)
-            smooth = cv2.imread(smooth)
+            real = cv2.imread(real).astype(np.float32)
+            style = cv2.imread(style).astype(np.float32)
+            smooth = cv2.imread(smooth).astype(np.float32)
             if self.transforms:
                 [real, style, smooth] = self.transforms([real, style, smooth])
             return real, style, smooth, index
         else:
             real = self.real[index]
-            real = cv2.imread(real)
+            real = cv2.imread(real).astype(np.float32)
             if self.transforms:
                 [real] = self.transforms([real])
             return real, None, None, index
