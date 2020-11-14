@@ -10,6 +10,10 @@ _C = CN()
 _C.MODEL = CN()
 # 训练设备类型
 _C.MODEL.DEVICE = "cuda"
+# 是否迁移学习
+_C.MODEL.TRANSFER_LEARNING = False
+# 是否使用reWeight获取badcase
+_C.MODEL.WEIGHT = ""
 
 # -----------------------------------------------------------------------------
 # BACKBONE
@@ -21,7 +25,7 @@ _C.MODEL.BACKBONE.BODY = "VGG19"
 # INPUT
 # -----------------------------------------------------------------------------
 _C.INPUT = CN()
-_C.INPUT.IMG_SIZE = (300, 300)
+_C.INPUT.IMG_SIZE = (256, 256)
 # RGB
 _C.INPUT.PIXEL_MEAN = [-4.4661, -8.6698, 13.1360]
 # _C.INPUT.PIXEL_STD = [127.5, 127.5, 127.5]
@@ -64,21 +68,16 @@ _C.MODEL.COMMON.WEIGHT_D_LOSS_BLUR = 1.0
 # -----------------------------------------------------------------------------
 _C.DATASETS = CN()
 # List of the dataset Info for training
-_C.DATASETS.TRAIN = [
-    {
-        'factory': 'PascalVOCDataset',
-        'dataDir': '/data/datasets/voc/VOC2007',
-        'split': 'train'
-    }
-]
+_C.DATASETS.TRAIN = []
 # List of the dataset Info for testing
-_C.DATASETS.TEST = [
-    {
-        'factory': 'PascalVOCDataset',
-        'dataDir': '/data/datasets/voc/VOC2007',
-        'split': 'test'
-    }
-]
+_C.DATASETS.TEST = []
+
+# -----------------------------------------------------------------------------
+# DataLoader
+# -----------------------------------------------------------------------------
+_C.DATALOADER = CN()
+# Number of data loading threads
+_C.DATALOADER.NUM_WORKERS = 1
 
 # ---------------------------------------------------------------------------- #
 # Solver
@@ -92,20 +91,33 @@ _C.SOLVER.CHECKPOINT_PERIOD = 20
 _C.SOLVER.PRINT_PERIOD = 20
 # 单位epoch
 _C.SOLVER.TEST_PERIOD = 10
-# 单位epoch
-_C.SOLVER.PRUNE_PERIOD = 1
+#每个batch处理图片，基于GPU数量定
+_C.SOLVER.IMS_PER_BATCH = 32
+
 
 _C.SOLVER.GENERATOR = CN()
 _C.SOLVER.GENERATOR.INIT_EPOCH = 10
 _C.SOLVER.GENERATOR.BASE_LR = 0.0002
-_C.SOLVER.GENERATOR.GENERATOR.STEPS = (_C.SOLVER.GENERATOR.INIT_EPOCH,)
+_C.SOLVER.GENERATOR.STEPS = (10,)
 _C.SOLVER.GENERATOR.WARMUP_FACTOR = 1.0 / 3
 _C.SOLVER.GENERATOR.WARMUP_ITERS = 0
 _C.SOLVER.GENERATOR.WARMUP_METHOD = "constant"
 
 _C.SOLVER.DISCRIMINATOR = CN()
 _C.SOLVER.DISCRIMINATOR.BASE_LR = 0.00004
-_C.SOLVER.DISCRIMINATOR.STEPS = (_C.SOLVER.MAX_EPOCH,)
+_C.SOLVER.DISCRIMINATOR.STEPS = (100,)
 _C.SOLVER.DISCRIMINATOR.WARMUP_FACTOR = 1.0 / 3
 _C.SOLVER.DISCRIMINATOR.WARMUP_ITERS = 0
 _C.SOLVER.DISCRIMINATOR.WARMUP_METHOD = "linear"
+
+# ---------------------------------------------------------------------------- #
+# TEST
+# ---------------------------------------------------------------------------- #
+_C.TEST = CN()
+# Number of images per batch
+_C.TEST.IMS_PER_BATCH = 32
+
+# ---------------------------------------------------------------------------- #
+# Misc options
+# ---------------------------------------------------------------------------- #
+_C.OUTPUT_DIR = "./outputs/"

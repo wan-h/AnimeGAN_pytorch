@@ -17,7 +17,7 @@ from animeganv2.configs import cfg
 from animeganv2.lib.trainer import train
 from animeganv2.utils.env import collect_env_info
 from animeganv2.utils.tm import generate_datetime_str
-from animeganv2.utils.comm import get_rank
+from animeganv2.utils.comm import get_rank, synchronize
 from animeganv2.utils.logger import setup_logger
 
 
@@ -58,10 +58,11 @@ def main():
         model_record_dir = os.path.dirname(weight_dir)
         output_dir = os.path.dirname(model_record_dir)
     else:
-        output_dir = os.path.join(os.path.abspath(cfg.OUTPUT_DIR),
-                                  generate_datetime_str(formate='%Y%m%d-%H%M%S', tag=cfg.NAME + '_' + cfg.TAG))
-
-    logger_name = cfg.NAME
+        output_dir = os.path.join(os.path.abspath(cfg.OUTPUT_DIR), generate_datetime_str(formate='%Y%m%d-%H%M%S'))
+    if get_rank() == 0:
+        os.makedirs(output_dir, exist_ok=True)
+        synchronize()
+    logger_name = "AnimeGan"
     logFile = os.path.join(output_dir, 'log.txt')
     logger = setup_logger(name=logger_name, distributed_rank=get_rank(), logFile=logFile)
     logger.info("Using {} GPUs".format(num_gpus))

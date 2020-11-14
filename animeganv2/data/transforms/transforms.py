@@ -14,6 +14,8 @@ class Compose(object):
             assert len(images) == 3
             outputs = []
             for image in images:
+                size = self.cfg.INPUT.IMG_SIZE
+                image = cv2.resize(image, size)
                 image_color = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2RGB)
                 image_gray = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
                 image_color[:, :, 0] += self.cfg.INPUT.PIXEL_MEAN[0]

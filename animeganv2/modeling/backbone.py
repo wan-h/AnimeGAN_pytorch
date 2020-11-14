@@ -35,19 +35,6 @@ class VGG(nn.Module):
         x = self.features(x)
         return x
 
-    def _initialize_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.01)
-                nn.init.constant_(m.bias, 0)
-
 # 定制化，输出conv4_4_no_activation
 def make_layers(cfg, batch_norm=False):
     layers = []
@@ -74,14 +61,10 @@ def make_layers(cfg, batch_norm=False):
             in_channels = v
     return nn.Sequential(*layers)
 
-
-def _vgg(arch, cfg, batch_norm, pretrained, progress, **kwargs):
+def _vgg(arch, cfg, batch_norm, pretrained, progress):
+    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm))
     if pretrained:
-        kwargs['init_weights'] = False
-    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
-    if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch],
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
 
@@ -97,9 +80,9 @@ def vgg19(pretrained=False, progress=True, **kwargs):
 
 @registry.BACKBONES.register("VGG19")
 def build_vgg_backbones(cfg):
-    return vgg19(pretrained=True)
+    return vgg19(pretrained=False)
 
 def build_backbone(cfg):
-    assert cfg.MODEL.BACKBONES.BODY in registry.BACKBONES, \
-        f"cfg.MODEL.BACKBONES.BODY: {cfg.MODEL.BACKBONES.CONV_BODY} are not registered in registry"
-    return registry.BACKBONES[cfg.MODEL.BACKBONES.BODY](cfg)
+    assert cfg.MODEL.BACKBONE.BODY in registry.BACKBONES, \
+        f"cfg.MODEL.BACKBONES.BODY: {cfg.MODEL.BACKBONE.CONV_BODY} are not registered in registry"
+    return registry.BACKBONES[cfg.MODEL.BACKBONE.BODY](cfg)

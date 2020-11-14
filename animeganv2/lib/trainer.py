@@ -84,7 +84,7 @@ def train(cfg, local_rank, distributed, logger_name, output_dir):
         start_iter=arguments["iteration"]
     )
 
-    # evaluators = get_evaluator(cfg, distributed, logger_name, dataEntrance, output_dir)
+    evaluators = get_evaluator(cfg, distributed, logger_name, output_dir=output_dir)
     models.update({"backbone": model_backbone})
 
     do_train(
@@ -97,7 +97,7 @@ def train(cfg, local_rank, distributed, logger_name, output_dir):
         arguments=arguments,
         logger_name=logger_name,
         epoch_size=epoch_size,
-        evaluators=None,
+        evaluators=evaluators,
     )
 
 def get_evaluator(cfg, distributed, logger_name, dataEntrance=None, output_dir=None):

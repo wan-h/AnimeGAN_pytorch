@@ -106,36 +106,3 @@ class InvertedRes_Block(nn.Module):
         out = self.dw(out)
         out = self.pw_linear(out)
         return x + out
-
-
-class DSConv(nn.Module):
-    def __init__(self):
-        super().__init__()
-        pass
-
-    def forward(self, x):
-        pass
-
-class IRB(nn.Module):
-    def __init__(self):
-        super().__init__()
-        pass
-
-    def forward(self, x):
-        pass
-
-class Down_Conv(nn.Module):
-    def __init__(self):
-        super().__init__()
-        pass
-
-    def forward(self, x):
-        pass
-
-class Up_Conv(nn.Module):
-    def __init__(self):
-        super().__init__()
-        pass
-
-    def forward(self, x):
-        pass

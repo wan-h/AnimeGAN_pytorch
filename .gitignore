@@ -2,3 +2,4 @@
 *.local
 .idea
 .cache
+outputs
