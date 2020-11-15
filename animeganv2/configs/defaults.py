@@ -35,7 +35,7 @@ _C.INPUT.PIXEL_MEAN = [-4.4661, -8.6698, 13.1360]
 # -----------------------------------------------------------------------------
 _C.MODEL.DISCRIMINATOR = CN()
 _C.MODEL.DISCRIMINATOR.BODY = "Base-256"
-_C.MODEL.DISCRIMINATOR.IN_CHANNELS = 64
+_C.MODEL.DISCRIMINATOR.IN_CHANNELS = 3
 _C.MODEL.DISCRIMINATOR.N_DIS = 2
 
 # -----------------------------------------------------------------------------
@@ -43,7 +43,7 @@ _C.MODEL.DISCRIMINATOR.N_DIS = 2
 # -----------------------------------------------------------------------------
 _C.MODEL.GENERATOR = CN()
 _C.MODEL.GENERATOR.BODY = "Base-256"
-_C.MODEL.GENERATOR.IN_CHANNELS = 64
+_C.MODEL.GENERATOR.IN_CHANNELS = 3
 
 # ---------------------------------------------------------------------------- #
 # Common options

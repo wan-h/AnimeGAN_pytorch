@@ -1,9 +1,9 @@
 # coding: utf-8
 # Author: wanhui0729@gmail.com
 
-import cv2
 import torch
 from torch import nn as nn
+from torch.nn import functional as F
 import numpy as np
 _rgb_to_yuv_kernel = [[0.299, -0.14714119, 0.61497538],
                       [0.587, -0.28886916, -0.51496512],
@@ -80,12 +80,12 @@ class Layer_Norm(nn.Module):
         super().__init__()
 
     def forward(self, x):
-        m = nn.LayerNorm(x.size()[1:])
-        return m(x)
+        return F.layer_norm(x, x.size()[1:])
 
 class InvertedRes_Block(nn.Module):
     def __init__(self, in_channels, out_channels, expansion_ratio, stride):
         super().__init__()
+        self.add_op = in_channels == out_channels
         bottleneck_dim = round(expansion_ratio * in_channels)
         # pw
         self.pw = Conv2DNormLReLU(in_channels, bottleneck_dim, kernel_size=1)
@@ -105,4 +105,6 @@ class InvertedRes_Block(nn.Module):
         out = self.pw(x)
         out = self.dw(out)
         out = self.pw_linear(out)
-        return x + out
+        if self.add_op:
+            out += x
+        return out
