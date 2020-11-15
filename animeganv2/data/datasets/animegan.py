@@ -76,6 +76,11 @@ class AnimeGanDataset(torch.utils.data.Dataset):
         else:
             return len(self.real)
 
+    def get_real(self, index):
+        real = self.real[index]
+        real = cv2.imread(real)
+        real = cv2.cvtColor(real, cv2.COLOR_BGR2RGB)
+        return real
     # def __iter__(self):
     #     self.iternum = self.__len__()
     #     return self
@@ -86,3 +91,7 @@ class AnimeGanDataset(torch.utils.data.Dataset):
     #         raise StopIteration
     #     else:
     #         return self.__getitem__(self.iternum)
+
+if __name__ == '__main__':
+    a = cv2.imread('/data/datasets/animegan/Shinkai/test/real/1.jpg')
+    print(a.shape, type(a), a.dtype)

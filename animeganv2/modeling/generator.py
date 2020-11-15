@@ -28,12 +28,12 @@ class G_Net(nn.Module):
         self.D = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             Conv2DNormLReLU(128, 128, kernel_size=3, padding=1),
-            Conv2DNormLReLU(128, 128, kernel_size=1, padding=1)
+            Conv2DNormLReLU(128, 128, kernel_size=1)
         )
         self.E = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             Conv2DNormLReLU(128, 64, kernel_size=3, padding=1),
-            Conv2DNormLReLU(64, 64, kernel_size=1, padding=1),
+            Conv2DNormLReLU(64, 64, kernel_size=1),
             Conv2DNormLReLU(64, 32, kernel_size=7, padding=3)
         )
         self.F = nn.Sequential(

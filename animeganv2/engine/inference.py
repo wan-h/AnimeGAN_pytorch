@@ -35,12 +35,15 @@ def compute_on_dataset(model, data_loader, device):
         )
     return results_dict, inference_timer.total_time
 
-def _save_prediction_images(predictions, dataset, output_folder):
-    for img_id, pred in predictions.items():
+def _save_prediction_images(predictions, dataset, output_folder, epoch):
+    save_path = os.path.join(output_folder, str(epoch))
+    if not os.path.exists(save_path):
+        os.makedirs(save_path, exist_ok=True)
+    for img_id, pred in tqdm(predictions.items()):
         fake_img = (pred.squeeze() + 1.) / 2 * 255
-        fake_img = fake_img.astype(np.uint8)
-        fake_img = adjust_brightness_from_src_to_dst(fake_img, dataset[img_id][0])
-        cv2.imwrite(fake_img, os.path.join(output_folder, f'{img_id}.jpg'))
+        fake_img = fake_img.permute(1, 2, 0).numpy().astype(np.uint8)
+        fake_img = adjust_brightness_from_src_to_dst(fake_img, dataset.get_real(img_id))
+        cv2.imwrite(os.path.join(save_path, f'{img_id}.jpg'), cv2.cvtColor(fake_img, cv2.COLOR_RGB2BGR))
 
 class Evaluator(object):
     def __init__(self, data_loader, device="cuda", output_folder=None, logger_name=None):
@@ -49,7 +52,7 @@ class Evaluator(object):
         self.logger = logging.getLogger(logger_name + ".inference")
         self.output_folder = output_folder
 
-    def do_inference(self, model):
+    def do_inference(self, model, epoch):
         num_devices = get_world_size()
         dataset = self.data_loader.dataset
         self.logger.info("Start evaluation on {} dataset({} images).".format(dataset.__class__.__name__, len(dataset)))
@@ -67,4 +70,5 @@ class Evaluator(object):
             return None
 
         if self.output_folder:
-            _save_prediction_images(predictions, dataset, self.output_folder)
+            self.logger.info("Start save generated images on {} dataset({} images).".format(dataset.__class__.__name__, len(dataset)))
+            _save_prediction_images(predictions, dataset, self.output_folder, epoch)

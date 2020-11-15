@@ -216,7 +216,7 @@ def do_train(
             if evaluators:
                 model_generator.eval()
                 for evaluator in evaluators:
-                    result = evaluator.do_inference(model_generator)
+                    result = evaluator.do_inference(model_generator, epoch_current)
                     # 只有主线程返回
                     if result:
                         # 用于解析日志标志

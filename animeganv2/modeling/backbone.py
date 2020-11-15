@@ -65,10 +65,10 @@ def _vgg(arch, cfg, batch_norm, pretrained, progress):
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm))
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
-        model.load_state_dict(state_dict)
+        model.load_state_dict(state_dict, strict=False)
     return model
 
-def vgg19(pretrained=False, progress=True, **kwargs):
+def vgg19(pretrained=False, progress=True):
     r"""VGG 19-layer model (configuration "E")
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_
 
@@ -76,11 +76,11 @@ def vgg19(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _vgg('vgg19', 'E', False, pretrained, progress, **kwargs)
+    return _vgg('vgg19', 'E', False, pretrained, progress)
 
 @registry.BACKBONES.register("VGG19")
 def build_vgg_backbones(cfg):
-    return vgg19(pretrained=False)
+    return vgg19(pretrained=True)
 
 def build_backbone(cfg):
     assert cfg.MODEL.BACKBONE.BODY in registry.BACKBONES, \

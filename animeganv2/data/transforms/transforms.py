@@ -24,7 +24,7 @@ class Compose(object):
                 image_color[:, :, 2] += self.cfg.INPUT.PIXEL_MEAN[2]
                 image_color = torch.from_numpy((image_color / 127.5 - 1.0).transpose((2, 0, 1)))
                 image_gray = torch.from_numpy((image_gray / 127.5 - 1.0))
-                image_gray = torch.cat([image_gray, image_gray, image_gray])
+                image_gray = torch.stack([image_gray, image_gray, image_gray])
                 outputs.append([image_color, image_gray])
         else:
             assert len(images) == 1
@@ -47,6 +47,6 @@ class Compose(object):
             image_gray = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
             image_color = torch.from_numpy((image_color / 127.5 - 1.0).transpose((2, 0, 1)))
             image_gray = torch.from_numpy((image_gray / 127.5 - 1.0))
-            image_gray = torch.cat([image_gray, image_gray, image_gray])
+            image_gray = torch.stack([image_gray, image_gray, image_gray])
             outputs = [[image_color, image_gray]]
         return outputs

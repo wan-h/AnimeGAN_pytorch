@@ -33,7 +33,7 @@ class D_Net(nn.Module):
             nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1),
             nn.InstanceNorm2d(out_channels, affine=True),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(in_channels, 1, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(out_channels, 1, kernel_size=3, stride=1, padding=1),
         )
 
     def forward(self, x):

@@ -7,7 +7,7 @@ class ImageBatchCollator(object):
         '''
         准备训练数据
         '''
-        if not images:
+        if not all(images):
             return None
         color_images = [image[0] for image in images]
         gray_images = [image[1] for image in images]

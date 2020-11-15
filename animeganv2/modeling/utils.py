@@ -22,7 +22,7 @@ def gram(x):
     b = shape[0]
     c = shape[1]
     x = torch.reshape(x, [b, -1, c])
-    return torch.matmul(x.permute(0, 1, 2), x) / (x.numel() // b)
+    return torch.bmm(x.permute(0, 2, 1), x) / (x.numel() // b)
 
 # Calculates the average brightness in the specified irregular image
 def calculate_average_brightness(img):
