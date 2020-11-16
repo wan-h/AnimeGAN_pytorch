@@ -8,12 +8,14 @@ import numpy as np
 _rgb_to_yuv_kernel = [[0.299, -0.14714119, 0.61497538],
                       [0.587, -0.28886916, -0.51496512],
                       [0.114, 0.43601035, -0.10001026]]
+@torch.no_grad()
 def rgb2yuv(x):
     # TODO: 这行代码的作用?
     x = (x + 1.0) / 2.0
-    im_flat = x.contiguous().view(-1, 3).float()
-    mat = torch.Tensor(_rgb_to_yuv_kernel)
-    temp = im_flat.mm(mat)
+    b, c, h, w = x.shape
+    im_flat = x.view(b, c, h * w).float()
+    mat = torch.stack([torch.Tensor(_rgb_to_yuv_kernel) for _ in range(b)]).to(x.device)
+    temp = torch.bmm(mat, im_flat)
     out = temp.view(x.shape)
     return out
 

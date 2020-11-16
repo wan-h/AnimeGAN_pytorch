@@ -61,7 +61,7 @@ def main():
         output_dir = os.path.join(os.path.abspath(cfg.OUTPUT_DIR), generate_datetime_str(formate='%Y%m%d-%H%M%S'))
     if get_rank() == 0:
         os.makedirs(output_dir, exist_ok=True)
-        synchronize()
+    synchronize()
     logger_name = "AnimeGan"
     logFile = os.path.join(output_dir, 'log.txt')
     logger = setup_logger(name=logger_name, distributed_rank=get_rank(), logFile=logFile)
