@@ -160,6 +160,7 @@ def do_train(
                 style_images_gray
             )
             G_FP_time = _t.toc()
+            loss_dict.update({"G_loss": loss_g})
             # BP G
             _t.tic()
             optimizer_generator.zero_grad()
