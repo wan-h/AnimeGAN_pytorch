@@ -5,18 +5,18 @@ import torch
 from torch import nn as nn
 from torch.nn import functional as F
 import numpy as np
-_rgb_to_yuv_kernel = [[0.299, -0.14714119, 0.61497538],
-                      [0.587, -0.28886916, -0.51496512],
-                      [0.114, 0.43601035, -0.10001026]]
+
+yuv_from_rgb = np.array([[0.299,       0.587,       0.114],
+                         [-0.14714119, -0.28886916, 0.43601035],
+                         [0.61497538,  -0.51496512, -0.10001026]])
 
 def rgb2yuv(x):
     # TODO: 这行代码的作用?
     x = (x + 1.0) / 2.0
-    b, c, h, w = x.shape
-    im_flat = x.view(b, c, h * w).float()
-    mat = torch.stack([torch.Tensor(_rgb_to_yuv_kernel) for _ in range(b)]).to(x.device)
-    temp = torch.bmm(mat, im_flat)
-    out = temp.view(x.shape)
+    x = x.permute([0, 2, 3, 1])
+    k_yuv_from_rgb = torch.from_numpy(yuv_from_rgb.T).to(x.dtype).to(x.device)
+    yuv = torch.matmul(x, k_yuv_from_rgb)
+    out = yuv.permute([0, 3, 1, 2])
     return out
 
 def gram(x):
