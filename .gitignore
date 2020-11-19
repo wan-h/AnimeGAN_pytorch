@@ -2,4 +2,5 @@
 *.local
 .idea
 .cache
+graph
 outputs

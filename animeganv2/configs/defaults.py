@@ -36,6 +36,7 @@ _C.INPUT.PIXEL_MEAN = [-4.4661, -8.6698, 13.1360]
 _C.MODEL.DISCRIMINATOR = CN()
 _C.MODEL.DISCRIMINATOR.BODY = "Base-256"
 _C.MODEL.DISCRIMINATOR.IN_CHANNELS = 3
+_C.MODEL.DISCRIMINATOR.CHANNELS = 64
 _C.MODEL.DISCRIMINATOR.N_DIS = 2
 
 # -----------------------------------------------------------------------------
