@@ -173,9 +173,9 @@ def do_train(
         batch_time = batch_timer.toc()
         # loss记录
         if is_main_process():
-            if iteration == 0:
+            # if iteration == 0:
                 # writer.add_graph(model_backbone, real_images_color)
-                writer.add_graph(model_generator, real_images_color)
+                # writer.add_graph(model_generator, torch.ones_like(real_images_color))
                 # writer.add_graph(model_discriminator, real_images_color)
             writer.add_scalars('train/loss', loss_dict, iteration)
         # logger
