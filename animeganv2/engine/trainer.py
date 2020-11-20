@@ -105,7 +105,7 @@ def do_train(
         epoch_current = math.ceil((iteration + 1) / epoch_size)
 
         # init阶段
-        if epoch_current < cfg.SOLVER.GENERATOR.INIT_EPOCH:
+        if epoch_current <= cfg.SOLVER.GENERATOR.INIT_EPOCH:
             # FP
             _t.tic()
             real_images_color = real_images_color.to(device)
