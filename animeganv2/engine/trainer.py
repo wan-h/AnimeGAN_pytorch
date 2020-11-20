@@ -4,7 +4,6 @@
 import os
 import math
 import logging
-import torch
 import torch.distributed as dist
 from torch.utils.tensorboard import SummaryWriter
 from animeganv2.utils.tm import *
@@ -160,6 +159,7 @@ def do_train(
                 style_images_gray
             )
             G_FP_time = _t.toc()
+            loss_dict.update({"G_loss": loss_g})
             # BP G
             _t.tic()
             optimizer_generator.zero_grad()
@@ -175,7 +175,7 @@ def do_train(
         if is_main_process():
             # if iteration == 0:
                 # writer.add_graph(model_backbone, real_images_color)
-                # writer.add_graph(model_generator, torch.ones_like(real_images_color))
+                # writer.add_graph(model_generator, real_images_color)
                 # writer.add_graph(model_discriminator, real_images_color)
             writer.add_scalars('train/loss', loss_dict, iteration)
         # logger

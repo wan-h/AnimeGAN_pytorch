@@ -44,6 +44,7 @@ class SmoothedValue(object):
 class MetricLogger(object):
     def __init__(self, delimiter="\t"):
         self.meters = defaultdict(SmoothedValue)
+        self.show = []
         self.delimiter = delimiter
 
     def update(self, **kwargs):
@@ -52,6 +53,7 @@ class MetricLogger(object):
                 v = v.item()
             assert isinstance(v, (float, int))
             self.meters[k].update(v)
+        self.show = kwargs.keys()
 
     def __getattr__(self, attr):
         if attr in self.meters:
@@ -65,6 +67,9 @@ class MetricLogger(object):
     def __str__(self):
         loss_str = []
         for name, meter in self.meters.items():
+            # 本轮未更新的参数信息不展示
+            if name not in self.show:
+                continue
             loss_str.append(
                 "{}: {:.4f} ({:.4f})".format(name, meter.avg, meter.median)
             )
