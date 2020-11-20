@@ -27,7 +27,7 @@ python tools/train_net.py \
 SOLVER.IMS_PER_BATCH 8
 
 # 多卡
-python -m torch.distributed.launch --nproc_r_node=8 \
+python -m torch.distributed.launch --nproc_per_node=8 \
 /tools/train_net.py \
 --config-file "path/to/config" \
 SOLVER.IMS_PER_BATCH 8
