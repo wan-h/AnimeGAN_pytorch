@@ -71,4 +71,4 @@ class Evaluator(object):
 
         if self.output_folder:
             self.logger.info("Start save generated images on {} dataset({} images).".format(dataset.__class__.__name__, len(dataset)))
-            _save_prediction_images(predictions, dataset, self.output_folder, epoch)
+            _save_prediction_images(predictions, dataset, self.output_folder, epoch-1)
