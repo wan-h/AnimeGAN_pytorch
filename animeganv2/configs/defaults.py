@@ -12,7 +12,6 @@ _C.MODEL = CN()
 _C.MODEL.DEVICE = "cuda"
 # 是否迁移学习
 _C.MODEL.TRANSFER_LEARNING = False
-# 是否使用reWeight获取badcase
 _C.MODEL.WEIGHT = ""
 
 # -----------------------------------------------------------------------------

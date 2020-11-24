@@ -3,6 +3,7 @@
 
 import torch.nn as nn
 from torchvision.models.utils import load_state_dict_from_url
+from torchvision.models.vgg import vgg19
 from animeganv2.modeling import registry
 
 model_urls = {

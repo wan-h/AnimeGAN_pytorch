@@ -5,10 +5,15 @@ import torch
 from torch import nn as nn
 from torch.nn import functional as F
 import numpy as np
+from torchvision.transforms import ToTensor
 
 yuv_from_rgb = np.array([[0.299,       0.587,       0.114],
                          [-0.14714119, -0.28886916, 0.43601035],
                          [0.61497538,  -0.51496512, -0.10001026]])
+
+# Pretrained
+feature_extract_mean = [0.485, 0.456, 0.406]
+feature_extract_std = [0.229, 0.224, 0.225]
 
 def rgb2yuv(x):
     # TODO: 这行代码的作用?
@@ -25,6 +30,20 @@ def gram(x):
     c = shape[1]
     x = torch.reshape(x, [b, -1, c])
     return torch.bmm(x.permute(0, 2, 1), x) / (x.numel() // b)
+
+def prepare_feature_extract(rgb):
+    # [-1, 1] ~ [0, 1]
+    rgb_scaled = ((rgb + 1.0) / 2.0)
+    R, G, B = torch.chunk(rgb_scaled, 3, 1)
+    feature_extract_input = torch.cat(
+        [
+            (R - feature_extract_mean[0]) / feature_extract_std[0],
+            (G - feature_extract_mean[1]) / feature_extract_std[1],
+            (B - feature_extract_mean[2]) / feature_extract_std[2]
+        ],
+        dim=1
+    )
+    return feature_extract_input
 
 # Calculates the average brightness in the specified irregular image
 def calculate_average_brightness(img):
