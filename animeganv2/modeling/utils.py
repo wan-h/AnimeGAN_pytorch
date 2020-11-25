@@ -78,7 +78,7 @@ def adjust_brightness_from_src_to_dst(dst, src):
     return dstf
 
 class Conv2DNormLReLU(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=True):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=False):
         super().__init__()
         self.Conv = nn.Conv2d(in_channels,
                               out_channels,
@@ -106,7 +106,7 @@ class Layer_Norm(nn.Module):
 class InvertedRes_Block(nn.Module):
     def __init__(self, in_channels, out_channels, expansion_ratio, stride):
         super().__init__()
-        self.add_op = in_channels == out_channels
+        self.add_op = (in_channels == out_channels and stride == 1)
         bottleneck_dim = round(expansion_ratio * in_channels)
         # pw
         self.pw = Conv2DNormLReLU(in_channels, bottleneck_dim, kernel_size=1)

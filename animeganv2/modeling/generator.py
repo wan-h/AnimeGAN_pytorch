@@ -26,20 +26,20 @@ class G_Net(nn.Module):
             Conv2DNormLReLU(256, 128, kernel_size=3, padding=1)
         )
         self.D = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
             Conv2DNormLReLU(128, 128, kernel_size=3, padding=1),
-            Conv2DNormLReLU(128, 128, kernel_size=1)
+            Conv2DNormLReLU(128, 128, kernel_size=3, padding=1)
         )
         self.E = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
             Conv2DNormLReLU(128, 64, kernel_size=3, padding=1),
-            Conv2DNormLReLU(64, 64, kernel_size=1),
+            Conv2DNormLReLU(64, 64, kernel_size=3, padding=1),
             Conv2DNormLReLU(64, 32, kernel_size=7, padding=3)
         )
         self.F = nn.Sequential(
-            nn.Conv2d(32, 3, kernel_size=1, stride=1)
+            nn.Conv2d(32, 3, kernel_size=1, stride=1),
+            nn.Tanh()
         )
-        self.fake = nn.Tanh()
 
     def forward(self, x):
         x = self.A(x)
@@ -48,7 +48,6 @@ class G_Net(nn.Module):
         x = self.D(x)
         x = self.E(x)
         x = self.F(x)
-        x = self.fake(x)
         return x
 
 @registry.GENERATOR.register("Base-256")
