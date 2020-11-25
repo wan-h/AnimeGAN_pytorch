@@ -3,6 +3,7 @@
 
 import cv2
 import torch
+import numpy as np
 
 class Compose(object):
     def __init__(self, cfg, is_train):
@@ -22,10 +23,10 @@ class Compose(object):
                 image_color[:, :, 0] += self.cfg.INPUT.PIXEL_MEAN[0]
                 image_color[:, :, 1] += self.cfg.INPUT.PIXEL_MEAN[1]
                 image_color[:, :, 2] += self.cfg.INPUT.PIXEL_MEAN[2]
-                image_color = torch.from_numpy((image_color / 127.5 - 1.0).transpose((2, 0, 1)))
-                image_gray = torch.from_numpy((image_gray / 127.5 - 1.0))
-                image_gray = torch.stack([image_gray, image_gray, image_gray])
-                outputs.append([image_color, image_gray])
+                image_color = torch.from_numpy(image_color.transpose((2, 0, 1)))
+                image_gray = torch.from_numpy(np.asarray([image_gray, image_gray, image_gray]))
+
+                outputs.append([image_color / 127.5 - 1.0, image_gray / 127.5 - 1.0])
         else:
             # real
             assert len(images) == 1
@@ -46,8 +47,7 @@ class Compose(object):
             image = cv2.resize(img, (w, h))
             image_color = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2RGB)
             image_gray = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
-            image_color = torch.from_numpy((image_color / 127.5 - 1.0).transpose((2, 0, 1)))
-            image_gray = torch.from_numpy((image_gray / 127.5 - 1.0))
-            image_gray = torch.stack([image_gray, image_gray, image_gray])
-            outputs = [[image_color, image_gray]]
+            image_color = torch.from_numpy(image_color.transpose((2, 0, 1)))
+            image_gray = torch.from_numpy(np.asarray([image_gray, image_gray, image_gray]))
+            outputs = [[image_color / 127.5 - 1.0, image_gray / 127.5 - 1.0]]
         return outputs
