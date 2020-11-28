@@ -11,6 +11,7 @@ from animeganv2.utils.comm import synchronize
 from animeganv2.utils.logger import MetricLogger
 from animeganv2.utils.comm import get_world_size, is_main_process
 from animeganv2.modeling.loss import *
+from animeganv2.modeling.utils import rgbScaled
 
 def reduce_loss_dict(loss_dict):
     """
@@ -90,6 +91,7 @@ def do_train(
     # epoch方式防止重复计算
     save_epoch = 0
     test_epoch = 0
+    image_epoch = 0
 
     for iteration, (real_images, style_images, smooth_images, _) in enumerate(data_loader, start_iter):
         data_load_time = data_load_timer.toc()
@@ -177,6 +179,14 @@ def do_train(
                 # writer.add_graph(model_backbone, real_images_color)
                 # writer.add_graph(model_generator, real_images_color)
                 # writer.add_graph(model_discriminator, real_images_color)
+            if epoch_current != image_epoch:
+                writer.add_image("images/real_color/{}".format(epoch_current), rgbScaled(real_images_color[0]))
+                writer.add_image("images/real_gray/{}".format(epoch_current), rgbScaled(real_images_gray[0]))
+                writer.add_image("images/style_color/{}".format(epoch_current), rgbScaled(style_images_color[0]))
+                writer.add_image("images/style_gray/{}".format(epoch_current), rgbScaled(style_images_gray[0]))
+                writer.add_image("images/smooth_color/{}".format(epoch_current), rgbScaled(smooth_images_color[0]))
+                writer.add_image("images/smooth_gray/{}".format(epoch_current), rgbScaled(smooth_images_gray[0]))
+                image_epoch = epoch_current
             writer.add_scalars('train/loss', loss_dict, iteration)
         # logger
         meters.update(batch_time=batch_time, data_time=data_load_time, **loss_dict)

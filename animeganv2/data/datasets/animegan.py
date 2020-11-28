@@ -57,9 +57,9 @@ class AnimeGanDataset(torch.utils.data.Dataset):
             real, style = self._real_consumer(), self._style_consumer()
             # 同名
             smooth = os.path.join(self.smooth_path, os.path.basename(style))
-            real = cv2.imread(real).astype(np.float32)
-            style = cv2.imread(style).astype(np.float32)
-            smooth = cv2.imread(smooth).astype(np.float32)
+            real = cv2.imread(real)
+            style = cv2.imread(style)
+            smooth = cv2.imread(smooth)
             if self.transforms:
                 [real, style, smooth] = self.transforms([real, style, smooth])
             return real, style, smooth, index

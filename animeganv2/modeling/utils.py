@@ -13,11 +13,15 @@ yuv_from_rgb = np.array([[0.299,       0.587,       0.114],
 
 # Pretrained
 feature_extract_mean = [0.485, 0.456, 0.406]
-feature_extract_std = [0.229, 0.224, 0.225]
+feature_extract_std = [0.229, 0.224, 0.225]\
+
+def rgbScaled(x):
+    # [-1, 1] ~ [0, 1]
+    return (x + 1.0) / 2.0
 
 def rgb2yuv(x):
     # TODO: 这行代码的作用?
-    x = (x + 1.0) / 2.0
+    x = rgbScaled(x)
     x = x.permute([0, 2, 3, 1])
     k_yuv_from_rgb = torch.from_numpy(yuv_from_rgb.T).to(x.dtype).to(x.device)
     yuv = torch.matmul(x, k_yuv_from_rgb)
@@ -33,7 +37,7 @@ def gram(x):
 
 def prepare_feature_extract(rgb):
     # [-1, 1] ~ [0, 1]
-    rgb_scaled = ((rgb + 1.0) / 2.0)
+    rgb_scaled = rgbScaled(rgb)
     R, G, B = torch.chunk(rgb_scaled, 3, 1)
     feature_extract_input = torch.cat(
         [

@@ -44,6 +44,7 @@ def _save_prediction_images(predictions, output_folder, epoch):
         ori_img = ori_img.permute(1, 2, 0).numpy().astype(np.uint8)
         fake_img = (pred.squeeze() + 1.) / 2 * 255
         fake_img = fake_img.permute(1, 2, 0).numpy().astype(np.uint8)
+        cv2.imwrite(os.path.join(save_path, f'{img_id}_c.jpg'), cv2.cvtColor(fake_img, cv2.COLOR_RGB2BGR))
         fake_img = adjust_brightness_from_src_to_dst(fake_img, ori_img)
         cv2.imwrite(os.path.join(save_path, f'{img_id}_a.jpg'), cv2.cvtColor(ori_img, cv2.COLOR_RGB2BGR))
         cv2.imwrite(os.path.join(save_path, f'{img_id}_b.jpg'), cv2.cvtColor(fake_img, cv2.COLOR_RGB2BGR))
