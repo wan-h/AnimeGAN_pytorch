@@ -118,7 +118,7 @@ class InvertedRes_Block(nn.Module):
         self.dw = nn.Sequential(
             nn.Conv2d(bottleneck_dim, bottleneck_dim, kernel_size=3, stride=stride, padding=1, groups=bottleneck_dim),
             Layer_Norm(),
-            nn.LeakyReLU()
+            nn.LeakyReLU(0.2)
         )
         # pw & linear
         self.pw_linear = nn.Sequential(
