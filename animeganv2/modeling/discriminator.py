@@ -3,6 +3,7 @@
 
 from torch import nn as nn
 from animeganv2.modeling import registry
+from animeganv2.modeling.utils import Layer_Norm
 
 class D_Net(nn.Module):
     def __init__(self, in_channels, channels, n_dis):
@@ -22,7 +23,7 @@ class D_Net(nn.Module):
             ]
             second_list += [
                 nn.Conv2d(channels * 2, channels * 4, kernel_size=3, stride=2, padding=1, bias=False),
-                nn.InstanceNorm2d(channels * 4, affine=True),
+                Layer_Norm(),
                 nn.LeakyReLU(0.2)
             ]
             channels_in = channels * 4
@@ -31,7 +32,7 @@ class D_Net(nn.Module):
 
         self.third = nn.Sequential(
             nn.Conv2d(channels_in, channels * 2, kernel_size=3, stride=1, padding=1),
-            nn.InstanceNorm2d(channels * 2, affine=True),
+            Layer_Norm(),
             nn.LeakyReLU(0.2),
             nn.Conv2d(channels * 2, 1, kernel_size=3, stride=1, padding=1),
         )

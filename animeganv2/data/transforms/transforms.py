@@ -21,9 +21,9 @@ class Compose(object):
                 image = cv2.resize(image, size)
                 image_color = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2RGB)
                 image_gray = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
-                # image_color[:, :, 0] += self.cfg.INPUT.PIXEL_MEAN[0]
-                # image_color[:, :, 1] += self.cfg.INPUT.PIXEL_MEAN[1]
-                # image_color[:, :, 2] += self.cfg.INPUT.PIXEL_MEAN[2]
+                image_color[:, :, 0] += self.cfg.INPUT.PIXEL_MEAN[0]
+                image_color[:, :, 1] += self.cfg.INPUT.PIXEL_MEAN[1]
+                image_color[:, :, 2] += self.cfg.INPUT.PIXEL_MEAN[2]
                 image_color = torch.from_numpy(image_color.transpose((2, 0, 1)))
                 image_gray = torch.from_numpy(np.asarray([image_gray, image_gray, image_gray]))
 

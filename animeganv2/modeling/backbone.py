@@ -1,9 +1,9 @@
 # coding: utf-8
 # Author: wanhui0729@gmail.com
 
+import torch
 import torch.nn as nn
 from torchvision.models.utils import load_state_dict_from_url
-from torchvision.models.vgg import vgg19
 from animeganv2.modeling import registry
 
 model_urls = {
@@ -62,26 +62,16 @@ def make_layers(cfg, batch_norm=False):
             in_channels = v
     return nn.Sequential(*layers)
 
-def _vgg(arch, cfg, batch_norm, pretrained, progress):
-    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm))
-    if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
-        model.load_state_dict(state_dict, strict=False)
-    return model
-
-def vgg19(pretrained=False, progress=True):
-    r"""VGG 19-layer model (configuration "E")
-    `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _vgg('vgg19', 'E', False, pretrained, progress)
-
 @registry.BACKBONES.register("VGG19")
 def build_vgg_backbones(cfg):
-    return vgg19(pretrained=True)
+    backbone_weiht = cfg.MODEL.BACKBONE.WEIGHT
+    model = VGG(make_layers(cfgs['E']))
+    if not backbone_weiht:
+        state_dict = load_state_dict_from_url(model_urls['vgg19'], progress=True)
+    else:
+        state_dict = torch.load(backbone_weiht)
+    model.load_state_dict(state_dict, strict=False)
+    return model
 
 def build_backbone(cfg):
     assert cfg.MODEL.BACKBONE.BODY in registry.BACKBONES, \

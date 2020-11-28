@@ -16,6 +16,7 @@ MODEL:
     WEIGHT_D_LOSS_BLUR: 1.0
   BACKBONE:
     BODY: "VGG19"
+    WEIGHT: "/data/datasets/animegan/vgg_tf_2_torch.pth"
   GENERATOR:
     BODY: "Base-256"
     IN_CHANNELS: 3
@@ -49,7 +50,7 @@ SOLVER:
   PRINT_PERIOD: 20
   CHECKPOINT_PERIOD: 5
   TEST_PERIOD: 2
-  IMS_PER_BATCH: 8
+  IMS_PER_BATCH: 12
   GENERATOR:
     BASE_LR: 0.0002
     INIT_EPOCH: 10

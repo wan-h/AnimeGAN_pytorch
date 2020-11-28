@@ -5,15 +5,16 @@ import torch
 from torch import nn as nn
 from torch.nn import functional as F
 import numpy as np
-from torchvision.transforms import ToTensor
 
 yuv_from_rgb = np.array([[0.299,       0.587,       0.114],
                          [-0.14714119, -0.28886916, 0.43601035],
                          [0.61497538,  -0.51496512, -0.10001026]])
 
 # Pretrained
-feature_extract_mean = [0.485, 0.456, 0.406]
-feature_extract_std = [0.229, 0.224, 0.225]\
+# rgb
+# feature_extract_mean = [0.485, 0.456, 0.406]
+# feature_extract_std = [0.229, 0.224, 0.225]
+feature_extract_mean = [123.68, 116.779, 103.939]
 
 def rgbScaled(x):
     # [-1, 1] ~ [0, 1]
@@ -36,14 +37,14 @@ def gram(x):
     return torch.bmm(x.permute(0, 2, 1), x) / (x.numel() // b)
 
 def prepare_feature_extract(rgb):
-    # [-1, 1] ~ [0, 1]
-    rgb_scaled = rgbScaled(rgb)
+    # [-1, 1] ~ [0, 255]
+    rgb_scaled = rgbScaled(rgb) * 255.0
     R, G, B = torch.chunk(rgb_scaled, 3, 1)
     feature_extract_input = torch.cat(
         [
-            (R - feature_extract_mean[0]) / feature_extract_std[0],
-            (G - feature_extract_mean[1]) / feature_extract_std[1],
-            (B - feature_extract_mean[2]) / feature_extract_std[2]
+            (B - feature_extract_mean[2]),
+            (G - feature_extract_mean[1]),
+            (R - feature_extract_mean[0]),
         ],
         dim=1
     )
@@ -81,6 +82,13 @@ def adjust_brightness_from_src_to_dst(dst, src):
 
     return dstf
 
+class Layer_Norm(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        return F.layer_norm(x, x.size()[1:])
+
 class Conv2DNormLReLU(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=False):
         super().__init__()
@@ -91,21 +99,14 @@ class Conv2DNormLReLU(nn.Module):
                               padding=padding,
                               padding_mode='reflect',
                               bias=bias)
-        self.Inst_Norm = nn.InstanceNorm2d(out_channels)
+        self.LayerNorm = Layer_Norm()
         self.LRelu = nn.LeakyReLU(0.2)
 
     def forward(self, x):
         x = self.Conv(x)
-        x = self.Inst_Norm(x)
+        x = self.LayerNorm(x)
         x = self.LRelu(x)
         return x
-
-class Layer_Norm(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x):
-        return F.layer_norm(x, x.size()[1:])
 
 class InvertedRes_Block(nn.Module):
     def __init__(self, in_channels, out_channels, expansion_ratio, stride):
