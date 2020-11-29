@@ -2,15 +2,29 @@
 # Author: wanhui0729@gmail.com
 
 from torch import nn as nn
+from torch.nn.utils import spectral_norm
 from animeganv2.modeling import registry
-from animeganv2.modeling.utils import Layer_Norm
+from animeganv2.modeling.layers import Layer_Norm
+
+def conv_sn(in_channels, out_channels, kernel_size, stride=1, padding=0, bias=True):
+    return spectral_norm(
+        nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            bias=bias
+        )
+    )
+
 
 class D_Net(nn.Module):
     def __init__(self, in_channels, channels, n_dis):
         super().__init__()
         channels = channels // 2
         self.first = nn.Sequential(
-            nn.Conv2d(in_channels, channels, kernel_size=3, stride=1, padding=1, bias=False),
+            conv_sn(in_channels, channels, kernel_size=3, stride=1, padding=1, bias=False),
             nn.LeakyReLU(0.2)
         )
 
@@ -18,11 +32,11 @@ class D_Net(nn.Module):
         channels_in = channels
         for _ in range(n_dis):
             second_list += [
-                nn.Conv2d(channels_in, channels * 2, kernel_size=3, stride=2, padding=1, bias=False),
+                conv_sn(channels_in, channels * 2, kernel_size=3, stride=2, padding=1, bias=False),
                 nn.LeakyReLU(0.2)
             ]
             second_list += [
-                nn.Conv2d(channels * 2, channels * 4, kernel_size=3, stride=2, padding=1, bias=False),
+                conv_sn(channels * 2, channels * 4, kernel_size=3, stride=1, padding=1, bias=False),
                 Layer_Norm(),
                 nn.LeakyReLU(0.2)
             ]
@@ -31,10 +45,10 @@ class D_Net(nn.Module):
         self.second = nn.Sequential(*second_list)
 
         self.third = nn.Sequential(
-            nn.Conv2d(channels_in, channels * 2, kernel_size=3, stride=1, padding=1),
+            conv_sn(channels_in, channels * 2, kernel_size=3, stride=1, padding=1),
             Layer_Norm(),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(channels * 2, 1, kernel_size=3, stride=1, padding=1),
+            conv_sn(channels * 2, 1, kernel_size=3, stride=1, padding=1),
         )
 
     def forward(self, x):

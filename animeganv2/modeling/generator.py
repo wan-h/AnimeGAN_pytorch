@@ -3,7 +3,53 @@
 
 from torch import nn as nn
 from animeganv2.modeling import registry
-from animeganv2.modeling.utils import Conv2DNormLReLU, InvertedRes_Block
+from animeganv2.modeling.layers import Layer_Norm
+
+class Conv2DNormLReLU(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=False):
+        super().__init__()
+        self.Conv = nn.Conv2d(in_channels,
+                              out_channels,
+                              kernel_size=kernel_size,
+                              stride=stride,
+                              padding=padding,
+                              padding_mode='reflect',
+                              bias=bias)
+        self.LayerNorm = Layer_Norm()
+        self.LRelu = nn.LeakyReLU(0.2)
+
+    def forward(self, x):
+        x = self.Conv(x)
+        x = self.LayerNorm(x)
+        x = self.LRelu(x)
+        return x
+
+class InvertedRes_Block(nn.Module):
+    def __init__(self, in_channels, out_channels, expansion_ratio, stride):
+        super().__init__()
+        self.add_op = (in_channels == out_channels and stride == 1)
+        bottleneck_dim = round(expansion_ratio * in_channels)
+        # pw
+        self.pw = Conv2DNormLReLU(in_channels, bottleneck_dim, kernel_size=1)
+        # dw
+        self.dw = nn.Sequential(
+            nn.Conv2d(bottleneck_dim, bottleneck_dim, kernel_size=3, stride=stride, padding=1, groups=bottleneck_dim),
+            Layer_Norm(),
+            nn.LeakyReLU(0.2)
+        )
+        # pw & linear
+        self.pw_linear = nn.Sequential(
+            nn.Conv2d(bottleneck_dim, out_channels, kernel_size=1),
+            Layer_Norm()
+        )
+
+    def forward(self, x):
+        out = self.pw(x)
+        out = self.dw(out)
+        out = self.pw_linear(out)
+        if self.add_op:
+            out += x
+        return out
 
 class G_Net(nn.Module):
     def __init__(self, in_channels):
