@@ -22,7 +22,7 @@ from animeganv2.utils.logger import setup_logger
 
 
 def main():
-    parser = argparse.ArgumentParser(description="PyTorch Detector Training")
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         "--config-file",
         default="",
