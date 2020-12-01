@@ -19,7 +19,6 @@ def rgbScaled(x):
     return (x + 1.0) / 2.0
 
 def rgb2yuv(x):
-    # TODO: 这行代码的作用?
     x = rgbScaled(x)
     x = x.permute([0, 2, 3, 1])
     k_yuv_from_rgb = torch.from_numpy(yuv_from_rgb.T).to(x.dtype).to(x.device)
@@ -28,11 +27,13 @@ def rgb2yuv(x):
     return out
 
 def gram(x):
+    # [b, c, h, w] -> [b, h, w, c]
+    x = x.permute([0, 2, 3, 1])
     shape = x.shape
     b = shape[0]
-    c = shape[1]
+    c = shape[3]
     x = torch.reshape(x, [b, -1, c])
-    return torch.bmm(x.permute(0, 2, 1), x) / (x.numel() // b)
+    return torch.matmul(x.permute(0, 2, 1), x) / (x.numel() // b)
 
 def prepare_feature_extract(rgb):
     # [-1, 1] ~ [0, 255]

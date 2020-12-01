@@ -25,11 +25,9 @@ def g_loss(model_backbone, model_generator, model_discriminator, real_images_col
 
     real_images_color_yuv = rgb2yuv(real_images_color)
     fake_yuv = rgb2yuv(fake)
-    fake_yuv_0, fake_yuv_1, fake_yuv_2 = torch.chunk(fake_yuv, 3, 1)
-    real_images_color_yuv_0, real_images_color_yuv_1, real_images_color_yuv_2 = torch.chunk(real_images_color_yuv, 3, 1)
-    color_loss = F.l1_loss(real_images_color_yuv_0, fake_yuv_0, reduction='mean') + \
-                 F.smooth_l1_loss(real_images_color_yuv_1, fake_yuv_1, reduction='mean') + \
-                 F.smooth_l1_loss(real_images_color_yuv_2, fake_yuv_2, reduction='mean')
+    color_loss = F.l1_loss(real_images_color_yuv[:, 0, :, :], fake_yuv[:, 0, :, :], reduction='mean') + \
+                 F.smooth_l1_loss(real_images_color_yuv[:, 1, :, :], fake_yuv[:, 1, :, :], reduction='mean') + \
+                 F.smooth_l1_loss(real_images_color_yuv[:, 2, :, :], fake_yuv[:, 2, :, :], reduction='mean')
 
 
     dh_input, dh_target = fake[:, :, :-1, :], fake[:, :, 1:, :]
