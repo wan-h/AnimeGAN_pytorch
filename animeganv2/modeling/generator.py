@@ -33,13 +33,21 @@ class InvertedRes_Block(nn.Module):
         self.pw = Conv2DNormLReLU(in_channels, bottleneck_dim, kernel_size=1)
         # dw
         self.dw = nn.Sequential(
-            nn.Conv2d(bottleneck_dim, bottleneck_dim, kernel_size=3, stride=stride, padding=1, groups=bottleneck_dim),
+            nn.Conv2d(
+                bottleneck_dim,
+                bottleneck_dim,
+                kernel_size=3,
+                stride=stride,
+                padding=1,
+                groups=bottleneck_dim,
+                padding_mode='reflect'
+            ),
             Layer_Norm(),
             nn.LeakyReLU(0.2)
         )
         # pw & linear
         self.pw_linear = nn.Sequential(
-            nn.Conv2d(bottleneck_dim, out_channels, kernel_size=1),
+            nn.Conv2d(bottleneck_dim, out_channels, kernel_size=1, padding_mode='reflect'),
             Layer_Norm()
         )
 
@@ -83,7 +91,7 @@ class G_Net(nn.Module):
             Conv2DNormLReLU(64, 32, kernel_size=7, padding=3)
         )
         self.F = nn.Sequential(
-            nn.Conv2d(32, 3, kernel_size=1, stride=1),
+            nn.Conv2d(32, 3, kernel_size=1, stride=1, padding_mode='reflect'),
             nn.Tanh()
         )
 
