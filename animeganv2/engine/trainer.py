@@ -111,8 +111,7 @@ def do_train(
             # FP
             _t.tic()
             real_images_color = real_images_color.to(device)
-            generated = model_generator(real_images_color)
-            loss_init = init_loss(model_backbone, real_images_color, generated)
+            loss_init = init_loss(model_backbone, model_generator, real_images_color)
             INIT_FP_time = _t.toc()
             loss_dict = {"Init_loss": loss_init}
             # BP
@@ -131,17 +130,18 @@ def do_train(
             style_images_color = style_images_color.to(device)
             style_images_gray = style_images_gray.to(device)
             smooth_images_gray = smooth_images_gray.to(device)
-            # 共享计算
-            generated = model_generator(real_images_color)
-            generated_logit = model_discriminator(generated)
             loss_dict = {}
             if iteration % cfg.MODEL.COMMON.TRAINING_RATE == 0:
                 # FP D
                 _t.tic()
-                anime_logit = model_discriminator(style_images_color)
-                anime_gray_logit = model_discriminator(style_images_gray)
-                smooth_logit = model_discriminator(smooth_images_gray)
-                loss_d = d_loss(anime_logit, anime_gray_logit, generated_logit, smooth_logit)
+                loss_d = d_loss(
+                    model_generator,
+                    model_discriminator,
+                    real_images_color,
+                    style_images_color,
+                    style_images_gray,
+                    smooth_images_gray
+                )
                 D_FP_time = _t.toc()
                 loss_dict.update({"D_loss": loss_d})
                 # BP D
@@ -153,7 +153,13 @@ def do_train(
                 meters.update(D_FP_time=D_FP_time, D_BP_time=D_BP_time)
             # FP G
             _t.tic()
-            loss_g = g_loss(model_backbone, real_images_color, style_images_gray, generated, generated_logit)
+            loss_g = g_loss(
+                model_backbone,
+                model_generator,
+                model_discriminator,
+                real_images_color,
+                style_images_gray
+            )
             G_FP_time = _t.toc()
             loss_dict.update({"G_loss": loss_g})
             # BP G

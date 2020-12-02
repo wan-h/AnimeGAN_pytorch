@@ -23,7 +23,8 @@ def rgb2yuv(x):
     x = x.permute([0, 2, 3, 1])
     k_yuv_from_rgb = torch.from_numpy(yuv_from_rgb.T).to(x.dtype).to(x.device)
     yuv = torch.matmul(x, k_yuv_from_rgb)
-    return yuv
+    out = yuv.permute([0, 3, 1, 2])
+    return out
 
 def gram(x):
     # [b, c, h, w] -> [b, h, w, c]
