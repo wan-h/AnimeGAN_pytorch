@@ -86,7 +86,3 @@ class AnimeGanDataset(torch.utils.data.Dataset):
     #         raise StopIteration
     #     else:
     #         return self.__getitem__(self.iternum)
-
-if __name__ == '__main__':
-    a = cv2.imread('/data/datasets/animegan/Shinkai/test/real/1.jpg')
-    print(a.shape, type(a), a.dtype)
