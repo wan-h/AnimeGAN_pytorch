@@ -6,16 +6,16 @@ from animeganv2.configs import cfg
 from torch.nn import functional as F
 from .utils import gram, rgb2yuv, prepare_feature_extract
 
-def init_loss(model_backbone, model_generator, real_images_color):
+def init_loss(model_backbone, real_images_color, generated):
+    fake = generated
     real_feature_map = model_backbone(prepare_feature_extract(real_images_color))
-    fake = model_generator(real_images_color)
     fake_feature_map = model_backbone(prepare_feature_extract(fake))
     loss = F.l1_loss(real_feature_map, fake_feature_map, reduction='mean')
     return loss * cfg.MODEL.COMMON.WEIGHT_G_CON
 
-def g_loss(model_backbone, model_generator, model_discriminator, real_images_color, style_images_gray):
+def g_loss(model_backbone, real_images_color, style_images_gray, generated, generated_logit):
+    fake = generated
     real_feature_map = model_backbone(prepare_feature_extract(real_images_color))
-    fake = model_generator(real_images_color)
     fake_feature_map = model_backbone(prepare_feature_extract(fake))
     anime_feature_map = model_backbone(prepare_feature_extract(style_images_gray))
 
@@ -36,7 +36,6 @@ def g_loss(model_backbone, model_generator, model_discriminator, real_images_col
               F.mse_loss(dw_input, dw_target, reduction='mean') / dw_input.numel()
 
     loss_func = cfg.MODEL.COMMON.GAN_TYPE
-    generated_logit = model_discriminator(fake)
     if loss_func == 'wgan-gp' or loss_func == 'wgan-lp':
         fake_loss = - torch.mean(generated_logit)
     elif loss_func == 'lsgan':
@@ -54,12 +53,7 @@ def g_loss(model_backbone, model_generator, model_discriminator, real_images_col
            cfg.MODEL.COMMON.WEIGHT_ADV_G * fake_loss
 
 
-def d_loss(model_generator, model_discriminator, real_images_color, style_images_color, style_images_gray, smooth_images_gray):
-    anime_logit = model_discriminator(style_images_color)
-    anime_gray_logit = model_discriminator(style_images_gray)
-    generated = model_generator(real_images_color)
-    generated_logit = model_discriminator(generated)
-    smooth_logit = model_discriminator(smooth_images_gray)
+def d_loss(generated_logit, anime_logit, anime_gray_logit, smooth_logit):
     loss_func = cfg.MODEL.COMMON.GAN_TYPE
     if loss_func == 'wgan-gp' or loss_func == 'wgan-lp':
         real_loss = - torch.mean(anime_logit)

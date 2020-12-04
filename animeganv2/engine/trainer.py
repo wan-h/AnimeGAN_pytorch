@@ -111,7 +111,8 @@ def do_train(
             # FP
             _t.tic()
             real_images_color = real_images_color.to(device)
-            loss_init = init_loss(model_backbone, model_generator, real_images_color)
+            generated = model_generator(real_images_color)
+            loss_init = init_loss(model_backbone, real_images_color, generated)
             INIT_FP_time = _t.toc()
             loss_dict = {"Init_loss": loss_init}
             # BP
@@ -125,40 +126,23 @@ def do_train(
             meters.update(INIT_FP_time=INIT_FP_time, INIT_BP_time=INIT_BP_time)
         # 正常训练阶段
         else:
-            # update D
             real_images_color = real_images_color.to(device)
             style_images_color = style_images_color.to(device)
             style_images_gray = style_images_gray.to(device)
             smooth_images_gray = smooth_images_gray.to(device)
+            generated = model_generator(real_images_color)
+            generated_logit = model_discriminator(generated)
+            generated_logit_d = model_discriminator(generated.detach())
             loss_dict = {}
-            if iteration % cfg.MODEL.COMMON.TRAINING_RATE == 0:
-                # FP D
-                _t.tic()
-                loss_d = d_loss(
-                    model_generator,
-                    model_discriminator,
-                    real_images_color,
-                    style_images_color,
-                    style_images_gray,
-                    smooth_images_gray
-                )
-                D_FP_time = _t.toc()
-                loss_dict.update({"D_loss": loss_d})
-                # BP D
-                _t.tic()
-                optimizer_discriminator.zero_grad()
-                loss_d.backward()
-                optimizer_discriminator.step()
-                D_BP_time = _t.toc()
-                meters.update(D_FP_time=D_FP_time, D_BP_time=D_BP_time)
+
             # FP G
             _t.tic()
             loss_g = g_loss(
                 model_backbone,
-                model_generator,
-                model_discriminator,
                 real_images_color,
-                style_images_gray
+                style_images_gray,
+                generated,
+                generated_logit
             )
             G_FP_time = _t.toc()
             loss_dict.update({"G_loss": loss_g})
@@ -171,6 +155,29 @@ def do_train(
             scheduler_discriminator.step()
             G_BP_time = _t.toc()
             meters.update(G_FP_time=G_FP_time, G_BP_time=G_BP_time)
+
+            if iteration % cfg.MODEL.COMMON.TRAINING_RATE == 0:
+                # FP D
+                _t.tic()
+                anime_logit = model_discriminator(style_images_color)
+                anime_gray_logit = model_discriminator(style_images_gray)
+                smooth_logit = model_discriminator(smooth_images_gray)
+                loss_d = d_loss(
+                    generated_logit_d,
+                    anime_logit,
+                    anime_gray_logit,
+                    smooth_logit
+                )
+                D_FP_time = _t.toc()
+                loss_dict.update({"D_loss": loss_d})
+                # BP D
+                _t.tic()
+                optimizer_discriminator.zero_grad()
+                loss_d.backward()
+                optimizer_discriminator.step()
+                D_BP_time = _t.toc()
+                meters.update(D_FP_time=D_FP_time, D_BP_time=D_BP_time)
+
 
         batch_time = batch_timer.toc()
         # loss记录
