@@ -32,8 +32,8 @@ def g_loss(model_backbone, real_images_color, style_images_gray, generated, gene
 
     dh_input, dh_target = fake[:, :, :-1, :], fake[:, :, 1:, :]
     dw_input, dw_target = fake[:, :, :, :-1], fake[:, :, :, 1:]
-    tv_loss = F.mse_loss(dh_input, dh_target, reduction='mean') / dh_input.numel() + \
-              F.mse_loss(dw_input, dw_target, reduction='mean') / dw_input.numel()
+    tv_loss = F.mse_loss(dh_input, dh_target, reduction='mean') + \
+              F.mse_loss(dw_input, dw_target, reduction='mean')
 
     loss_func = cfg.MODEL.COMMON.GAN_TYPE
     if loss_func == 'wgan-gp' or loss_func == 'wgan-lp':
