@@ -25,9 +25,9 @@ def g_loss(model_backbone, real_images_color, style_images_gray, generated, gene
 
     real_images_color_yuv = rgb2yuv(real_images_color)
     fake_yuv = rgb2yuv(fake)
-    color_loss = F.l1_loss(real_images_color_yuv[:, 0, :, :], fake_yuv[:, 0, :, :], reduction='mean') + \
-                 F.smooth_l1_loss(real_images_color_yuv[:, 1, :, :], fake_yuv[:, 1, :, :], reduction='mean') + \
-                 F.smooth_l1_loss(real_images_color_yuv[:, 2, :, :], fake_yuv[:, 2, :, :], reduction='mean')
+    color_loss = F.l1_loss(real_images_color_yuv[..., 0], fake_yuv[..., 0], reduction='mean') + \
+                 F.smooth_l1_loss(real_images_color_yuv[..., 1], fake_yuv[..., 1], reduction='mean') + \
+                 F.smooth_l1_loss(real_images_color_yuv[..., 2], fake_yuv[..., 2], reduction='mean')
 
 
     dh_input, dh_target = fake[:, :, :-1, :], fake[:, :, 1:, :]
@@ -48,7 +48,7 @@ def g_loss(model_backbone, real_images_color, style_images_gray, generated, gene
         raise NotImplementedError
     return cfg.MODEL.COMMON.WEIGHT_G_CON * c_loss + \
            cfg.MODEL.COMMON.WEIGHT_G_STYLE * s_loss + \
-           cfg.MODEL.COMMON.WEIGHT_G_STYLE * color_loss + \
+           cfg.MODEL.COMMON.WEIGHT_G_COLOR * color_loss + \
            cfg.MODEL.COMMON.WEIGHT_G_TV * tv_loss + \
            cfg.MODEL.COMMON.WEIGHT_ADV_G * fake_loss
 
