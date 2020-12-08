@@ -1,6 +1,7 @@
 # coding: utf-8
 # Author: wanhui0729@gmail.com
 
+import torch
 from torch import nn as nn
 from torch.nn.utils import spectral_norm
 from animeganv2.modeling import registry
@@ -50,6 +51,14 @@ class D_Net(nn.Module):
             nn.LeakyReLU(0.2),
             conv_sn(channels * 2, 1, kernel_size=3, stride=1, padding=1),
         )
+        self._initialize_weights()
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.normal_(m.weight, mean=0., std=0.02)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0.0)
 
     def forward(self, x):
         x = self.first(x)

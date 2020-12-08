@@ -1,9 +1,19 @@
 # coding: utf-8
 # Author: wanhui0729@gmail.com
 
+import math
 from torch import nn as nn
 from animeganv2.modeling import registry
 from animeganv2.modeling.layers import Layer_Norm
+
+def truncated_normal_(tensor, mean=0., std=0.1):
+    size = tensor.shape
+    tmp = tensor.new_empty(size + (4,)).normal_()
+    valid = (tmp < 2) & (tmp > -2)
+    ind = valid.max(-1, keepdim=True)[1]
+    tensor.data.copy_(tmp.gather(-1, ind).squeeze(-1))
+    tensor.data.mul_(std).add_(mean)
+    return tensor
 
 class Conv2DNormLReLU(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=False):
@@ -94,6 +104,16 @@ class G_Net(nn.Module):
             nn.Conv2d(32, 3, kernel_size=1, stride=1, bias=False, padding_mode='reflect'),
             nn.Tanh()
         )
+        self._initialize_weights()
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                # variance_scaling_initializer
+                # https://docs.w3cub.com/tensorflow~python/tf/contrib/layers/variance_scaling_initializer
+                truncated_normal_(m.weight, mean=0., std=math.sqrt(1.3 * 2.0 / m.in_channels))
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         x = self.A(x)
