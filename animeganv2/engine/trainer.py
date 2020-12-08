@@ -187,12 +187,12 @@ def do_train(
                 # writer.add_graph(model_generator, real_images_color)
                 # writer.add_graph(model_discriminator, real_images_color)
             if epoch_current != image_epoch:
-                writer.add_image("images/real_color/{}".format(epoch_current), rgbScaled(real_images_color[0]))
-                writer.add_image("images/real_gray/{}".format(epoch_current), rgbScaled(real_images_gray[0]))
-                writer.add_image("images/style_color/{}".format(epoch_current), rgbScaled(style_images_color[0]))
-                writer.add_image("images/style_gray/{}".format(epoch_current), rgbScaled(style_images_gray[0]))
-                writer.add_image("images/smooth_color/{}".format(epoch_current), rgbScaled(smooth_images_color[0]))
-                writer.add_image("images/smooth_gray/{}".format(epoch_current), rgbScaled(smooth_images_gray[0]))
+                writer.add_image("images/real_color/{}".format(epoch_current), rgbScaled(real_images_color[0]).clamp(0, 1))
+                writer.add_image("images/real_gray/{}".format(epoch_current), rgbScaled(real_images_gray[0]).clamp(0, 1))
+                writer.add_image("images/style_color/{}".format(epoch_current), rgbScaled(style_images_color[0]).clamp(0, 1))
+                writer.add_image("images/style_gray/{}".format(epoch_current), rgbScaled(style_images_gray[0]).clamp(0, 1))
+                writer.add_image("images/smooth_color/{}".format(epoch_current), rgbScaled(smooth_images_color[0]).clamp(0, 1))
+                writer.add_image("images/smooth_gray/{}".format(epoch_current), rgbScaled(smooth_images_gray[0]).clamp(0, 1))
                 image_epoch = epoch_current
             writer.add_scalars('train/loss', loss_dict, iteration)
         # logger
