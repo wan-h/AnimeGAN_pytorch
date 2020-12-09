@@ -41,7 +41,7 @@ def g_loss(model_backbone, real_images_color, style_images_gray, generated, gene
     elif loss_func == 'lsgan':
         fake_loss = torch.mean(torch.square(generated_logit - 1.0))
     elif loss_func == 'gan' or loss_func == 'dragan':
-        fake_loss = F.cross_entropy(F.sigmoid(generated_logit), torch.ones_like(generated_logit), reduction='mean')
+        fake_loss = F.binary_cross_entropy_with_logits(generated_logit, torch.ones_like(generated_logit), reduction='mean')
     elif loss_func == 'hinge':
         fake_loss = - torch.mean(generated_logit)
     else:
@@ -52,6 +52,37 @@ def g_loss(model_backbone, real_images_color, style_images_gray, generated, gene
            cfg.MODEL.COMMON.WEIGHT_G_TV * tv_loss + \
            cfg.MODEL.COMMON.WEIGHT_ADV_G * fake_loss
 
+from  torch import autograd
+from torch.autograd import Variable
+def gradient_panalty(model_discriminator, style_images_color, generted):
+    loss_func = cfg.MODEL.COMMON.GAN_TYPE
+    if loss_func not in ['dragan', 'wgan-gp', 'wgan-lp']:
+        return 0
+    if loss_func == 'dragan':
+        eps = torch.empty_like(style_images_color).uniform_(0, 1)
+        x_var = style_images_color.var()
+        x_std = torch.sqrt(x_var)
+        generted = style_images_color + 0.5 * x_std * eps
+    b, c, h, w = style_images_color.shape
+    device = style_images_color.device
+    alpha = torch.Tensor(b, 1, 1, 1).uniform_(0, 1)
+    alpha = alpha.expand(b, c, h, w).to(device)
+    interpolated = style_images_color + alpha * (generted - style_images_color)
+
+    # define it to calculate gradient
+    interpolated = Variable(interpolated, requires_grad=True)
+    # calculate probability of interpolated examples
+    prob_interpolated = model_discriminator(interpolated)
+    # calculate gradients of probabilities with respect to examples
+    gradients = autograd.grad(
+        outputs=prob_interpolated,
+        inputs=interpolated,
+        grad_outputs=torch.ones(prob_interpolated.size()).to(device),
+        create_graph=True,
+        retain_graph=True
+    )[0]
+    GP = ((gradients.norm(2, dim=1) - 1) ** 2).mean() * cfg.MODEL.COMMON.LD
+    return GP
 
 def d_loss(generated_logit, anime_logit, anime_gray_logit, smooth_logit):
     loss_func = cfg.MODEL.COMMON.GAN_TYPE
@@ -66,10 +97,10 @@ def d_loss(generated_logit, anime_logit, anime_gray_logit, smooth_logit):
         fake_loss = torch.mean(torch.square(generated_logit))
         real_blur_loss = torch.mean(torch.square(smooth_logit))
     elif loss_func == 'gan' or loss_func == 'dragan':
-        real_loss = F.cross_entropy(F.sigmoid(anime_logit), torch.ones_like(anime_logit), reduction='mean')
-        gray_loss = F.cross_entropy(F.sigmoid(anime_gray_logit), torch.zeros_like(anime_gray_logit), reduction='mean')
-        fake_loss = F.cross_entropy(F.sigmoid(generated_logit), torch.zeros_like(generated_logit), reduction='mean')
-        real_blur_loss = F.cross_entropy(F.sigmoid(smooth_logit), torch.zeros_like(smooth_logit), reduction='mean')
+        real_loss = F.binary_cross_entropy_with_logits(anime_logit, torch.ones_like(anime_logit), reduction='mean')
+        gray_loss = F.binary_cross_entropy_with_logits(anime_gray_logit, torch.zeros_like(anime_gray_logit), reduction='mean')
+        fake_loss = F.binary_cross_entropy_with_logits(generated_logit, torch.zeros_like(generated_logit), reduction='mean')
+        real_blur_loss = F.binary_cross_entropy_with_logits(smooth_logit, torch.zeros_like(smooth_logit), reduction='mean')
     elif loss_func == 'hinge':
         real_loss = torch.mean(torch.relu(1.0 - anime_logit))
         gray_loss = torch.mean(torch.relu(1.0 + anime_gray_logit))

@@ -1,19 +1,20 @@
 MODEL:
-  WEIGHT: ""
+  WEIGHT: "/home/wan/workspace/code/AnimeGANv2/outputs/20201209-015402/model_record/model_00010.pth"
   TRANSFER_LEARNING: False
   COMMON:
-    GAN_TYPE: 'lsgan'
+    GAN_TYPE: 'gan'
     TRAINING_RATE: 1
+    LD: 10.0
     WEIGHT_ADV_G: 300.0
     WEIGHT_ADV_D: 300.0
     WEIGHT_G_CON: 1.5
     WEIGHT_G_STYLE: 2.5
     WEIGHT_G_COLOR: 15.0
     WEIGHT_G_TV: 1.0
-    WEIGHT_D_LOSS_REAL: 1.7
-    WEIGHT_D_LOSS_FAKE: 1.7
-    WEIGHT_D_LOSS_GRAY: 1.7
-    WEIGHT_D_LOSS_BLUR: 1.0
+    WEIGHT_D_LOSS_REAL: 1.2
+    WEIGHT_D_LOSS_FAKE: 1.2
+    WEIGHT_D_LOSS_GRAY: 1.2
+    WEIGHT_D_LOSS_BLUR: 0.8
   BACKBONE:
     BODY: "VGG19"
     WEIGHT: "/data/datasets/animegan/vgg_tf_2_torch.pth"

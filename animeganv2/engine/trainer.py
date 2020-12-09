@@ -162,12 +162,13 @@ def do_train(
                 anime_logit = model_discriminator(style_images_color)
                 anime_gray_logit = model_discriminator(style_images_gray)
                 smooth_logit = model_discriminator(smooth_images_gray)
+                gp = gradient_panalty(model_discriminator, style_images_color, generated.detach())
                 loss_d = d_loss(
                     generated_logit_d,
                     anime_logit,
                     anime_gray_logit,
                     smooth_logit
-                )
+                ) + gp
                 D_FP_time = _t.toc()
                 loss_dict.update({"D_loss": loss_d})
                 # BP D
