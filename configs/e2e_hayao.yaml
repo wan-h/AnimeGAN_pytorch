@@ -1,8 +1,8 @@
 MODEL:
-  WEIGHT: "/home/wan/workspace/code/AnimeGANv2/outputs/20201209-015402/model_record/model_00010.pth"
+  WEIGHT: ""
   TRANSFER_LEARNING: False
   COMMON:
-    GAN_TYPE: 'gan'
+    GAN_TYPE: 'lsgan'
     TRAINING_RATE: 1
     LD: 10.0
     WEIGHT_ADV_G: 300.0

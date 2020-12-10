@@ -131,12 +131,34 @@ def do_train(
             style_images_gray = style_images_gray.to(device)
             smooth_images_gray = smooth_images_gray.to(device)
             generated = model_generator(real_images_color)
-            generated_logit = model_discriminator(generated)
-            generated_logit_d = model_discriminator(generated.detach())
             loss_dict = {}
+            if iteration % cfg.MODEL.COMMON.TRAINING_RATE == 0:
+                # FP D
+                _t.tic()
+                generated_logit = model_discriminator(generated.detach())
+                anime_logit = model_discriminator(style_images_color)
+                anime_gray_logit = model_discriminator(style_images_gray)
+                smooth_logit = model_discriminator(smooth_images_gray)
+                gp = gradient_panalty(model_discriminator, style_images_color, generated.detach())
+                loss_d = d_loss(
+                    generated_logit,
+                    anime_logit,
+                    anime_gray_logit,
+                    smooth_logit
+                ) + gp
+                D_FP_time = _t.toc()
+                loss_dict.update({"D_loss": loss_d})
+                # BP D
+                _t.tic()
+                optimizer_discriminator.zero_grad()
+                loss_d.backward()
+                optimizer_discriminator.step()
+                D_BP_time = _t.toc()
+                meters.update(D_FP_time=D_FP_time, D_BP_time=D_BP_time)
 
             # FP G
             _t.tic()
+            generated_logit = model_discriminator(generated)
             loss_g = g_loss(
                 model_backbone,
                 real_images_color,
@@ -155,29 +177,6 @@ def do_train(
             scheduler_discriminator.step()
             G_BP_time = _t.toc()
             meters.update(G_FP_time=G_FP_time, G_BP_time=G_BP_time)
-
-            if iteration % cfg.MODEL.COMMON.TRAINING_RATE == 0:
-                # FP D
-                _t.tic()
-                anime_logit = model_discriminator(style_images_color)
-                anime_gray_logit = model_discriminator(style_images_gray)
-                smooth_logit = model_discriminator(smooth_images_gray)
-                gp = gradient_panalty(model_discriminator, style_images_color, generated.detach())
-                loss_d = d_loss(
-                    generated_logit_d,
-                    anime_logit,
-                    anime_gray_logit,
-                    smooth_logit
-                ) + gp
-                D_FP_time = _t.toc()
-                loss_dict.update({"D_loss": loss_d})
-                # BP D
-                _t.tic()
-                optimizer_discriminator.zero_grad()
-                loss_d.backward()
-                optimizer_discriminator.step()
-                D_BP_time = _t.toc()
-                meters.update(D_FP_time=D_FP_time, D_BP_time=D_BP_time)
 
 
         batch_time = batch_timer.toc()
