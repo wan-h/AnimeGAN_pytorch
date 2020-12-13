@@ -104,7 +104,7 @@ class G_Net(nn.Module):
             nn.Conv2d(32, 3, kernel_size=1, stride=1, bias=False, padding_mode='reflect'),
             nn.Tanh()
         )
-        self._initialize_weights()
+        # self._initialize_weights()
 
     def _initialize_weights(self):
         for m in self.modules():
