@@ -62,9 +62,9 @@ def main():
     size = (int(w - w % 32), int(h - h % 32))
     # size = (256, 256)
     # fourcc = int(videoCapture.get(cv2.CAP_PROP_FOURCC))
-    fourcc = cv2.VideoWriter_fourcc(*'I420')
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     frame_num = int(videoCapture.get(cv2.CAP_PROP_FRAME_COUNT))
-    videoWriter = cv2.VideoWriter('./anime.avi', fourcc, fps, size)
+    videoWriter = cv2.VideoWriter('./anime.mp4', fourcc, fps, size)
 
     for _ in tqdm(range(frame_num)):
         success, frame = videoCapture.read()
