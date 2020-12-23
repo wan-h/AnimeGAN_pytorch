@@ -26,6 +26,14 @@ def rgb2yuv(x):
     # yuv = yuv.permute([0, 3, 1, 2])
     return yuv
 
+def color_2_gray(x):
+    x = x.permute([0, 2, 3, 1])
+    k_color_2_gray = torch.Tensor([[0.299], [0.587], [0.114]]).to(x.dtype).to(x.device)
+    gray = torch.matmul(x, k_color_2_gray)
+    gray = torch.cat([gray, gray, gray], dim=-1)
+    gray = gray.permute([0, 3, 1, 2])
+    return gray
+
 def gram(x):
     # [b, c, h, w] -> [b, h, w, c]
     x = x.permute([0, 2, 3, 1])

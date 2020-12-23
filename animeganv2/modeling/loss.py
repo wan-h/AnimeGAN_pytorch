@@ -4,7 +4,7 @@
 import torch
 from animeganv2.configs import cfg
 from torch.nn import functional as F
-from .utils import gram, rgb2yuv, prepare_feature_extract
+from .utils import gram, rgb2yuv, prepare_feature_extract, color_2_gray
 
 def init_loss(model_backbone, real_images_color, generated):
     fake = generated
@@ -17,11 +17,15 @@ def g_loss(model_backbone, real_images_color, style_images_gray, generated, gene
     fake = generated
     real_feature_map = model_backbone(prepare_feature_extract(real_images_color))
     fake_feature_map = model_backbone(prepare_feature_extract(fake))
+    fake_feature_map_gray = model_backbone(prepare_feature_extract(color_2_gray(fake)))
     anime_feature_map = model_backbone(prepare_feature_extract(style_images_gray))
 
     c_loss = F.l1_loss(real_feature_map, fake_feature_map, reduction='mean')
 
-    s_loss = F.l1_loss(gram(anime_feature_map), gram(fake_feature_map), reduction='mean')
+    if cfg.MODEL.LOSS.S_LOSS_COLOR2GRAY:
+        s_loss = F.l1_loss(gram(anime_feature_map), gram(fake_feature_map_gray), reduction='mean')
+    else:
+        s_loss = F.l1_loss(gram(anime_feature_map), gram(fake_feature_map), reduction='mean')
 
     real_images_color_yuv = rgb2yuv(real_images_color)
     fake_yuv = rgb2yuv(fake)
