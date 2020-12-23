@@ -4,8 +4,10 @@
 import os
 import cv2
 import random
+from tqdm import tqdm
 import numpy as np
 import torch.utils.data
+from animeganv2.utils.comm import is_main_process, synchronize
 
 class AnimeGanDataset(torch.utils.data.Dataset):
     def __init__(self, dataDir, split, transforms=None):
@@ -18,8 +20,9 @@ class AnimeGanDataset(torch.utils.data.Dataset):
             style_path = os.path.join(dataFolder, 'style')
             smooth_path = os.path.join(dataFolder, 'smooth')
             # 初始化做smooth处理
-            if not os.path.exists(smooth_path):
-                self._gen_smooth(real_path, smooth_path)
+            if not os.path.exists(smooth_path) and is_main_process():
+                self._gen_smooth(style_path, smooth_path)
+            synchronize()
             self.real = [os.path.join(real_path, name) for name in os.listdir(real_path)]
             self.style = [os.path.join(style_path, name) for name in os.listdir(style_path)]
             self.smooth_path = smooth_path
@@ -29,8 +32,35 @@ class AnimeGanDataset(torch.utils.data.Dataset):
             real_path = os.path.join(dataFolder, 'real')
             self.real = [os.path.join(real_path, name) for name in os.listdir(real_path)]
 
-    def _gen_smooth(self, real_path, smooth_path):
-        pass
+    def _gen_smooth(self, style_path, smooth_path):
+        os.makedirs(smooth_path)
+        for image in tqdm(os.listdir(style_path)):
+            image_path = os.path.join(style_path, image)
+            bgr_img = cv2.imread(image_path)
+            gray_img = cv2.imread(image_path, 0)
+
+            kernel_size = 5
+            kernel = np.ones((kernel_size, kernel_size), np.uint8)
+            gauss = cv2.getGaussianKernel(kernel_size, 0)
+            gauss = gauss * gauss.transpose(1, 0)
+
+            pad_img = np.pad(bgr_img, ((2, 2), (2, 2), (0, 0)), mode='reflect')
+            edges = cv2.Canny(gray_img, 100, 200)
+            dilation = cv2.dilate(edges, kernel)
+            gauss_img = np.copy(bgr_img)
+            idx = np.where(dilation != 0)
+            for i in range(np.sum(dilation != 0)):
+                gauss_img[idx[0][i], idx[1][i], 0] = np.sum(
+                    np.multiply(pad_img[idx[0][i]:idx[0][i] + kernel_size, idx[1][i]:idx[1][i] + kernel_size, 0],
+                                gauss))
+                gauss_img[idx[0][i], idx[1][i], 1] = np.sum(
+                    np.multiply(pad_img[idx[0][i]:idx[0][i] + kernel_size, idx[1][i]:idx[1][i] + kernel_size, 1],
+                                gauss))
+                gauss_img[idx[0][i], idx[1][i], 2] = np.sum(
+                    np.multiply(pad_img[idx[0][i]:idx[0][i] + kernel_size, idx[1][i]:idx[1][i] + kernel_size, 2],
+                                gauss))
+
+            cv2.imwrite(os.path.join(smooth_path, image), gauss_img)
 
     def _init_real_producer(self):
         self.real_producer = self.real.copy()
