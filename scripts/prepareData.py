@@ -9,6 +9,8 @@ from tqdm import tqdm
 TARGET_SIZE = (1920, 1080)
 
 def save_frames_from_video(video, output, interval):
+    if not os.path.exists(output):
+        os.makedirs(output)
     videoCapture = cv2.VideoCapture(video)
     fps = int(videoCapture.get(cv2.CAP_PROP_FPS))
     frame_num = int(videoCapture.get(cv2.CAP_PROP_FRAME_COUNT))
