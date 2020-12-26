@@ -7,6 +7,7 @@ import random
 from tqdm import tqdm
 import numpy as np
 import torch.utils.data
+from PIL import Image
 from animeganv2.utils.comm import is_main_process, synchronize
 
 class AnimeGanDataset(torch.utils.data.Dataset):
@@ -87,15 +88,15 @@ class AnimeGanDataset(torch.utils.data.Dataset):
             real, style = self._real_consumer(), self._style_consumer()
             # 同名
             smooth = os.path.join(self.smooth_path, os.path.basename(style))
-            real = cv2.imread(real)
-            style = cv2.imread(style)
-            smooth = cv2.imread(smooth)
+            real = Image.open(real).convert("RGB")
+            style = Image.open(style).convert("RGB")
+            smooth = Image.open(smooth).convert("RGB")
             if self.transforms:
                 [real, style, smooth] = self.transforms([real, style, smooth])
             return real, style, smooth, index
         else:
             real = self.real[index]
-            real = cv2.imread(real).astype(np.float32)
+            real = Image.open(real).convert("RGB")
             if self.transforms:
                 [real] = self.transforms([real])
             return real, None, None, index
