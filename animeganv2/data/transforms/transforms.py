@@ -16,7 +16,9 @@ class Compose():
             assert len(images) == 3
             # real
             grayAndNormlize_real = GrayAndNormlize(mean=self.cfg.INPUT.PIXEL_MEAN)
-            outputs += grayAndNormlize_real(images[0], use_norm=False)
+            randomCrop_style = RandomCrop(self.cfg.INPUT.IMG_SIZE[0], self.cfg.INPUT.IMG_SIZE[1])
+            crop_images = randomCrop_style(images[0])
+            outputs += grayAndNormlize_real(crop_images, use_norm=False)
             # style and smooth
             randomCrop_style = RandomCrop(self.cfg.INPUT.IMG_SIZE[0], self.cfg.INPUT.IMG_SIZE[1])
             grayAndNormlize_style = GrayAndNormlize(mean=self.cfg.INPUT.PIXEL_MEAN)

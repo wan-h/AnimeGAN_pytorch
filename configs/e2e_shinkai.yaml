@@ -1,5 +1,5 @@
 MODEL:
-  WEIGHT: ""
+  WEIGHT: "/home/wan/workspace/code/AnimeGANv2/outputs/20201228-215153/model_record/model_00090.pth"
   TRANSFER_LEARNING: False
   COMMON:
     GAN_TYPE: 'lsgan'

@@ -1,20 +1,19 @@
 MODEL:
-  WEIGHT: "/home/wan/workspace/code/AnimeGANv2/outputs/20210205-222938/model_record/model_00099.pth"
+  WEIGHT: ""
   TRANSFER_LEARNING: False
   COMMON:
     GAN_TYPE: 'lsgan'
     TRAINING_RATE: 1
-    LD: 10.0
     WEIGHT_ADV_G: 300.0
     WEIGHT_ADV_D: 300.0
-    WEIGHT_G_CON: 1.5
-    WEIGHT_G_STYLE: 2.5
-    WEIGHT_G_COLOR: 15.0
+    WEIGHT_G_CON: 1.2
+    WEIGHT_G_STYLE: 2.0
+    WEIGHT_G_COLOR: 10.0
     WEIGHT_G_TV: 1.0
-    WEIGHT_D_LOSS_REAL: 1.2
-    WEIGHT_D_LOSS_FAKE: 1.2
-    WEIGHT_D_LOSS_GRAY: 1.2
-    WEIGHT_D_LOSS_BLUR: 0.8
+    WEIGHT_D_LOSS_REAL: 1.7
+    WEIGHT_D_LOSS_FAKE: 1.7
+    WEIGHT_D_LOSS_GRAY: 1.7
+    WEIGHT_D_LOSS_BLUR: 1.0
   BACKBONE:
     BODY: "VGG19"
     WEIGHT: "/data/datasets/animegan/vgg_tf_2_torch.pth"
@@ -30,27 +29,37 @@ DATASETS:
   TRAIN: [
     {
       'factory': 'AnimeGanDataset',
-      'dataDir': '/data/datasets/animegan/Hayao',
+      'dataDir': '/data/datasets/animegan/Shinkai',
+      'split': 'train'
+    },
+    {
+      'factory': 'AnimeGanDataset',
+      'dataDir': '/data/datasets/animegan/ip11',
       'split': 'train'
     }
   ]
   TEST: [
     {
       'factory': 'AnimeGanDataset',
-      'dataDir': '/data/datasets/animegan/Hayao',
+      'dataDir': '/data/datasets/animegan/Shinkai',
+      'split': 'test'
+    },
+    {
+      'factory': 'AnimeGanDataset',
+      'dataDir': '/data/datasets/animegan/ip11',
       'split': 'test'
     }
   ]
 INPUT:
   IMG_SIZE: (256, 256)
-  PIXEL_MEAN: [-4.4661, -8.6698, 13.1360]
+  PIXEL_MEAN: [0.0, 0.0, 0.0]
 DATALOADER:
   NUM_WORKERS: 1
 SOLVER:
   MAX_EPOCH: 100
   PRINT_PERIOD: 20
-  CHECKPOINT_PERIOD: 1
-  TEST_PERIOD: 1
+  CHECKPOINT_PERIOD: 2
+  TEST_PERIOD: 2
   IMS_PER_BATCH: 8
   GENERATOR:
     BASE_LR: 0.0002
