@@ -48,8 +48,19 @@ SOLVER.IMS_PER_BATCH 8
 # --image 图像路径
 # MODEL.WEIGHT 模型文件路径
 python scripts/image2anime.py \
---config-path "your_config_path" \
+--config-file "your_config_path" \
 --image "your_image_path" \
+MODEL.WEIGHT "your_model_path"
+```
+
+## 视频转换
+```
+# --config-path 配置文件路径
+# --video 视频路径
+# MODEL.WEIGHT 模型文件路径
+python scripts/image2anime.py \
+--config-file "your_config_path" \
+--video "your_video_path" \
 MODEL.WEIGHT "your_model_path"
 ```
 

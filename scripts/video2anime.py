@@ -49,7 +49,7 @@ def main():
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.freeze()
-    video = args.video
+    video_path = args.video
     model_weight = cfg.MODEL.WEIGHT
     device = torch.device(cfg.MODEL.DEVICE)
 
@@ -57,22 +57,19 @@ def main():
     model.eval()
     transform = build_transforms(cfg, False)
 
-    videoCapture = cv2.VideoCapture(video)
+    videoCapture = cv2.VideoCapture(video_path)
     fps = int(videoCapture.get(cv2.CAP_PROP_FPS))
-    w, h = int(videoCapture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(videoCapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    size = (int(w - w % 32), int(h - h % 32))
-    # size = (256, 256)
+    # w, h = int(videoCapture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(videoCapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # size = (int(w - w % 32), int(h - h % 32))
+    size = (1920, 1080)
     # fourcc = int(videoCapture.get(cv2.CAP_PROP_FOURCC))
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     frame_num = int(videoCapture.get(cv2.CAP_PROP_FRAME_COUNT))
-    videoWriter = cv2.VideoWriter('./anime.mp4', fourcc, fps, size)
-    c = 1
-    for _ in tqdm(range(frame_num)):
-        c += 1
-        if c > 21: break
+    videoWriter = cv2.VideoWriter(f"anime_{os.path.basename(video_path)}.mp4", fourcc, fps, size)
+    for index in tqdm(range(frame_num)):
         success, frame = videoCapture.read()
-        frame = cv2.resize(frame, (1920, 1080))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = cv2.resize(frame, size)
         input = Image.fromarray(frame)
         input = transform([input])[0][0].unsqueeze(0)
         input = input.to(device)
@@ -82,6 +79,9 @@ def main():
         pred_img = pred_img.permute(1, 2, 0).numpy().clip(0, 255).astype(np.uint8)
         pred_img = adjust_brightness_from_src_to_dst(pred_img, frame)
         video_frame = cv2.cvtColor(pred_img, cv2.COLOR_RGB2BGR)
+        video_frame = cv2.resize(video_frame, size)
+        # cv2.imshow("", video_frame)
+        # cv2.waitKey()
         videoWriter.write(video_frame)
     videoCapture.release()
     videoWriter.release()
