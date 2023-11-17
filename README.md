@@ -74,9 +74,5 @@ MODEL.WEIGHT "your_model_path"
 ![](src/hayao/anime_2.jpg)
 ![](src/hayao/anime_3.jpg) 
 
-## 兴趣小组
-添加好友，申请进群  
-![](src/wechat.png)
-
 ## Thanks
 Thanks for [TachibanaYoshino](https://tachibanayoshino.github.io/AnimeGANv2/)
